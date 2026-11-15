@@ -125,6 +125,12 @@ export default defineSchema({
     text: v.string(),
   }).index("by_memberId", ["memberId"]),
 
+  // Server-only values, such as the Whop webhook signing secret. Never read by a public function.
+  settings: defineTable({
+    key: v.string(),
+    value: v.string(),
+  }).index("by_key", ["key"]),
+
   weekResults: defineTable({
     groupId: v.id("groups"),
     week: v.number(),

@@ -1,26 +1,45 @@
-import { useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import * as WebBrowser from "expo-web-browser";
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { api } from "@convex/_generated/api";
 import { Avatar, Button, Card, Screen, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, space } from "@/theme";
+import { errorMessage } from "@/utils/errors";
+import * as haptics from "@/utils/haptics";
 
-// Owned by the lead. Whop Season Pass (PLAN §10, step 4). Cosmetic only: it
-// never sells powers, points or spins. Set EXPO_PUBLIC_WHOP_CHECKOUT_URL to the
-// Whop checkout link; the webhook that turns the ring on comes next.
-
-const CHECKOUT_URL = process.env.EXPO_PUBLIC_WHOP_CHECKOUT_URL;
+// Owned by the lead. The Whop Season Pass (PLAN §10, step 4). Free and cosmetic only:
+// it never sells powers, points or spins. Checkout happens on Whop; the ring turns on
+// by itself when Whop's webhook lands, because users.me is a live query.
 
 const PERKS = [
   "A ring on your avatar on every rival's board",
   "The same ring on the Sunday reveal, for the whole group to see",
-  "Supports the game. Changes nothing about the scores",
+  "Free during launch. Changes nothing about the scores",
 ];
 
 export function Pass() {
   const token = useToken();
   const me = useQuery(api.users.me, token ? { token } : "skip");
+  const createCheckout = useAction(api.whop.createCheckout);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function open() {
+    if (!token || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { url } = await createCheckout({ token });
+      await WebBrowser.openBrowserAsync(url);
+    } catch (e) {
+      setError(errorMessage(e));
+      haptics.error();
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <Screen back title="Season Pass">
@@ -45,25 +64,23 @@ export function Pass() {
       </Card>
 
       {me?.hasPass ? (
-        <Card>
-          <Txt variant="title">You have the Season Pass</Txt>
+        <Card testID="pass-owned">
+          <Txt variant="title">✨ You have the Season Pass</Txt>
           <Txt color={colors.muted}>Your ring is showing on every board.</Txt>
         </Card>
       ) : (
         <>
+          {error ? <Txt color={colors.bad}>{error}</Txt> : null}
           <Button
             testID="pass-checkout"
-            label="Get it on Whop"
-            disabled={!CHECKOUT_URL}
-            onPress={() => {
-              if (CHECKOUT_URL) void WebBrowser.openBrowserAsync(CHECKOUT_URL);
-            }}
+            label="Get it free on Whop"
+            loading={busy}
+            disabled={!me}
+            onPress={open}
           />
-          {!CHECKOUT_URL ? (
-            <Txt variant="caption" color={colors.muted} align="center">
-              Checkout opens once the Whop link is added.
-            </Txt>
-          ) : null}
+          <Txt variant="caption" color={colors.muted} align="center">
+            Checkout opens on Whop. Your ring appears here as soon as it's done.
+          </Txt>
         </>
       )}
     </Screen>
