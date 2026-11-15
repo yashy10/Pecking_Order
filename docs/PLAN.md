@@ -706,6 +706,8 @@ It needs no Android Studio and no Google account. When it finishes, the build pa
    npx eas-cli@latest update:configure      # then set "runtimeVersion": { "policy": "sdkVersion" } in app.json
    npx eas-cli@latest update --branch demo --message "freeze"
    ```
+   **Gotcha, found at 1:45:** `eas update --environment preview` does not read `.env`, so the three `EXPO_PUBLIC_*` addresses also live in the EAS "preview" environment (`eas env:list preview`). If one changes, change it in both places. EAS Build does read `.env`. After publishing, check that `dist/_expo/static/js/android/*.hbc` contains `bold-pony-982`.
+
    Check this by 2:50, not at the freeze. If it will not open in Expo Go, the fallback is the dev server over your phone's hotspot or a tunnel (your `expo-go-qr` skill does this). The Android phone has a second option: the installed build from §9 needs no dev server at all.
 4. **Whop Season Pass (P1 — the sponsor prize you are going for).** The pass is cosmetic and never sells powers: a ✨ ring on your avatar in the rivals view and on the finale board.
    - `src/screens/pass.tsx`: what the pass is, the price, one button.
