@@ -61,15 +61,32 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
   if (group.phase === "revealed") {
     const sat = myPlay.points === null;
     return (
-      <Card>
+      <Card testID="revealed-card">
         <Txt variant="overline" color={colors.muted}>
-          Today's {info.name}
+          Today's {info.name} · revealed
         </Txt>
-        <Txt variant="display" tabular color={sat ? colors.muted : colors.good}>
-          {sat ? "—" : `+${myPlay.points}`}
+        {sat ? (
+          <Txt variant="title">You sat this one out</Txt>
+        ) : (
+          <View style={styles.sealedRow}>
+            <Txt variant="display" tabular color={colors.good}>
+              +{myPlay.points}
+            </Txt>
+            <Txt variant="heading" color={colors.muted} style={styles.grow}>
+              banked at the reveal
+            </Txt>
+          </View>
+        )}
+        <Txt color={colors.muted}>
+          {sat ? "No points today, but the board still moved. " : ""}The next game drops tomorrow.
         </Txt>
-        <Txt variant="heading">{sat ? "You sat this one out" : "Banked at the reveal"}</Txt>
-        <Txt color={colors.muted}>The next game drops tomorrow.</Txt>
+        <Button
+          label="See how the board moved"
+          variant="tonal"
+          icon="board"
+          testID="see-board"
+          onPress={() => router.navigate(`/g/${groupId}/board`)}
+        />
       </Card>
     );
   }
@@ -111,14 +128,9 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
         <View style={styles.gameGlyph}>
           <Text style={styles.gameEmoji}>{info.emoji}</Text>
         </View>
-        <View style={styles.grow}>
-          <Txt variant="title">{info.name}</Txt>
-          {double ? (
-            <Txt variant="caption" color={colors.primary}>
-              Wildcard Wednesday: everything counts double
-            </Txt>
-          ) : null}
-        </View>
+        <Txt variant="title" style={styles.grow}>
+          {info.name}
+        </Txt>
       </View>
       <Txt color={colors.muted}>{info.line}</Txt>
       <Button

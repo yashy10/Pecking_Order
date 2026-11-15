@@ -11,7 +11,7 @@ const TONES: Record<Tone, { bg: string; ink: string }> = {
   good: { bg: colors.good, ink: colors.primaryInk },
   bad: { bg: colors.bad, ink: colors.primaryInk },
   fog: { bg: colors.fog, ink: colors.ink },
-  soft: { bg: colors.primarySoft, ink: colors.primary },
+  soft: { bg: colors.primarySoft, ink: colors.primaryDeep },
   goodSoft: { bg: colors.goodSoft, ink: colors.good },
   badSoft: { bg: colors.badSoft, ink: colors.bad },
   neutral: { bg: colors.sunken, ink: colors.muted },

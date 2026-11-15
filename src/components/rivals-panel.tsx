@@ -135,7 +135,6 @@ function SlotRow({ slot, side }: { slot: Slot; side: "above" | "below" }) {
         ) : (
           <>
             <Txt variant="heading" tabular color={side === "above" ? colors.ink : colors.muted}>
-              {side === "above" ? "+" : "−"}
               {slot.gap}
             </Txt>
             <Txt variant="caption" color={colors.muted}>

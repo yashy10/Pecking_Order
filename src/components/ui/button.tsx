@@ -27,7 +27,7 @@ type Props = {
 const INK: Record<Variant, string> = {
   primary: colors.primaryInk,
   secondary: colors.ink,
-  tonal: colors.primary,
+  tonal: colors.primaryDeep,
   ghost: colors.primary,
 };
 
