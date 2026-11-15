@@ -759,19 +759,19 @@ Claude Code can drive steps 1–7 on the web build itself and report what it see
 
 ## 12. Demo runbook (3 minutes)
 
-**Stage layout.** One laptop on the projector with two windows side by side: the iPhone mirrored over a cable in QuickTime, and a browser showing the demo panel's QR code. The iPhone runs the EAS Update, not the dev server. The Android phone, running the installed build, is in your hand as the second player. Everything is on your phone's hotspot, not venue Wi-Fi.
+**Stage layout (updated 1:45).** One laptop on the projector with two windows side by side: the iPhone mirrored over a cable in QuickTime, and a browser at `pecking-order.expo.app/demo` (or `localhost:8081/demo`) showing the QR. The iPhone runs the app in Expo Go from the QR page at `localhost:19000`: it loads once from the laptop, then talks to the cloud backend directly, so a dropped tunnel only matters on a reload. Safari on `pecking-order.expo.app` is the no-laptop fallback. The Android phone runs the installed build, which updates itself, and is in your hand as the second player. Everything is on your phone's hotspot, not venue Wi-Fi.
 
-| Time | Beat |
-|---|---|
-| 0:00 | "A daily game for your friend group, where nobody knows who's winning until Sunday." Nothing more. |
-| 0:10 | QR on screen. Judges scan, type a name, pick an emoji. It is Wildcard Wednesday in a group of twelve. |
-| 0:40 | Judges play Blur. Their phones say "sealed". The mirrored iPhone shows a rivals view that has not moved. |
-| 1:15 | "It's 9 pm." Tap Next. Every phone updates at once: "You're 12 behind Priya, 30 ahead of Sam." A banner drops: "Priya just passed you." |
-| 1:45 | "Rival above me ghosts." Priya fades off the mirrored board and someone else appears. Invite a judge to tap their own Ghost. Then tap Spy: three places open above. |
-| 2:15 | Jump to Sunday. The board reveals from the bottom up on every phone. A champion is crowned. |
-| 2:45 | "Every friend group has a pecking order. Now you find out every Sunday." Hold up both phones: one codebase for iPhone, Android and the web link the judges just used. One line on what is next. |
+| Time | Beat | Panel / screen |
+|---|---|---|
+| 0:00 | "A daily game for your friend group, where nobody knows who's winning until Sunday." Nothing more. | |
+| 0:10 | QR on screen. Judges scan, type a name, pick an emoji, tap **Join and play**: they land straight in the round. It is Wildcard Wednesday in a group of twelve. | Demo panel QR |
+| 0:40 | Judges play Blur (typos are forgiven). Their phones say "points sealed". The mirrored iPhone's **Board** tab hasn't moved. | Phones: Today tab |
+| 1:15 | "It's 9 pm." Tap **Next ▶**. Every phone updates at once: the Board shows "12 behind Priya, 30 ahead of Sam", and a banner drops: "Priya just passed you." | Next ▶ |
+| 1:45 | Tap your own name under **Powers**: the rival above you vanishes from the mirrored Board and someone else slides in. Invite a judge to use their own Ghost from the Board tab. Then use Spy: three places open above. | Powers chips |
+| 2:15 | **Jump to Sunday.** The board flips in from the bottom on every phone and a champion is crowned. | Jump to Sunday |
+| 2:45 | "Every friend group has a pecking order. Now you find out every Sunday." Hold up both phones: one codebase for iPhone, Android and the web link the judges just used. One line on what is next. | |
 
-**Before you walk up:** a new demo group is seeded; both of your phones have joined it and played; the QR is on screen; Expo Go is open on the update; the hotspot is on; the backup video is one click away.
+**Before you walk up:** at `/demo`, enter the demo key and tap **New demo group** (Wildcard Wednesday, 12 bots, 10 already played). Both of your phones join it and play. The QR is on screen, Expo Go is open, the hotspot is on, and the backup video is one click away. If a judge wants to see Who Said It: **Next ▶** twice turns Wednesday into Thursday, built from the bots' answers.
 
 **If something fails:** the web link does not load → hand over your team's phones, already joined. The iPhone will not mirror → run your side in a browser window. Everything fails → play the video and talk over it.
 
