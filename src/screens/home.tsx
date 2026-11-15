@@ -3,7 +3,6 @@ import { Redirect, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "@convex/_generated/api";
-import { ProfileForm } from "@/components/profile-form";
 import { Avatar, Button, Card, Field, GameButton, Icon, Ornament, Screen, Skeleton, Txt } from "@/components/ui";
 import { ONE_LINER } from "@/constants";
 import { useToken } from "@/hooks/use-identity";
@@ -14,12 +13,18 @@ import { lastGroup } from "@/utils/last-group";
 // Owned by Track A. The table: the brand at the top, an empty centre, and everything you
 // can do in the lower third, where a thumb reaches (from docs/design/board_game_mobile_backdrop.html).
 // First run goes to /welcome (onboarding). After that: your groups ("tables"), then host or join one.
+// "Playing as" opens /profile (src/screens/profile.tsx).
 
-type Panel = "create" | "join" | "profile" | null;
+type Panel = "create" | "join" | null;
 
 // Once per launch, a returning player skips this list: straight into the group this
 // device opened last, or their only group. Coming back here later doesn't bounce them.
 let launchChecked = false;
+
+/** Show the list on the next visit instead of jumping into a group (after leaving one). */
+export function skipLaunchJump(): void {
+  launchChecked = true;
+}
 
 export function Home() {
   const token = useToken();
@@ -79,15 +84,6 @@ export function Home() {
           </View>
         ) : me === null || !me.signedIn || me.needsProfile ? (
           <Redirect href="/welcome" />
-        ) : panel === "profile" ? (
-          <ProfileForm
-            title="Edit profile"
-            cta="Save"
-            initialName={me.name}
-            initialEmoji={me.emoji}
-            onSaved={() => setPanel(null)}
-            onCancel={() => setPanel(null)}
-          />
         ) : (
           <>
             {groups === undefined ? (
@@ -143,9 +139,9 @@ export function Home() {
             <View style={styles.footer}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Playing as ${me.name}. Edit profile`}
+                accessibilityLabel={`Playing as ${me.name}. Open your profile`}
                 testID="edit-profile"
-                onPress={() => setPanel("profile")}
+                onPress={() => router.push("/profile")}
                 style={({ pressed }) => [styles.me, pressed && styles.pressed]}
               >
                 <Avatar emoji={me.emoji} hasPass={me.hasPass} size={30} />

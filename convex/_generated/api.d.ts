@@ -28,6 +28,7 @@ import type * as lib_scoring from "../lib/scoring.js";
 import type * as lib_standings from "../lib/standings.js";
 import type * as lib_whopSignature from "../lib/whopSignature.js";
 import type * as powers from "../powers.js";
+import type * as profile from "../profile.js";
 import type * as prompts from "../prompts.js";
 import type * as rivals from "../rivals.js";
 import type * as today from "../today.js";
@@ -63,6 +64,7 @@ declare const fullApi: ApiFromModules<{
   "lib/standings": typeof lib_standings;
   "lib/whopSignature": typeof lib_whopSignature;
   powers: typeof powers;
+  profile: typeof profile;
   prompts: typeof prompts;
   rivals: typeof rivals;
   today: typeof today;

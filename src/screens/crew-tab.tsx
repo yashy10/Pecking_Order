@@ -134,8 +134,17 @@ function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
               title={me.name}
               subtitle={me.hasPass ? "Season Pass ring is on" : "Your name and bird in every group"}
               leading={<Avatar emoji={me.emoji} hasPass={me.hasPass} size={40} />}
+              onPress={() => router.push("/profile")}
+              testID="crew-profile"
             />
           ) : null}
+          <ListRow
+            title="Table settings"
+            subtitle="Rename the table, a new invite code, or leave"
+            leading={<RowGlyph icon="edit" />}
+            onPress={() => router.push(`/g/${groupId}/settings`)}
+            testID="crew-settings"
+          />
           <ListRow
             title="Season Pass"
             subtitle={me?.hasPass ? "You have it" : "A ring on your avatar. Free, cosmetic only"}
