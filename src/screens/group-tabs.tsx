@@ -1,5 +1,6 @@
 import { useQuery } from "convex/react";
 import { TabList, TabSlot, TabTrigger, Tabs } from "expo-router/ui";
+import { useEffect } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@convex/_generated/api";
@@ -7,22 +8,29 @@ import type { Id } from "@convex/_generated/dataModel";
 import { TabButton } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, layout, space } from "@/theme";
+import { rememberGroup } from "@/utils/last-group";
 
-// Owned by the lead. The three tabs inside a group:
-//   Today — what to do now: play, answer the question, the latest news
-//   Board — where you stand: rivals and powers, and the finale on Sunday
-//   Crew  — the group itself: invite, who's in, the week, the rules
+// Owned by the lead. The four tabs inside a group:
+//   Today  — what to do now: play, answer the question, the latest news
+//   Board  — where you stand: rivals and powers, and the finale on Sunday
+//   Sunday — the countdown to the finale, when the full board drops
+//   Crew   — the group itself: invite, who's in, the week, the rules
 // Play and Invite sit above the tabs in the root stack, so a round is full-screen.
 
 export function GroupTabs({ groupId }: { groupId: Id<"groups"> }) {
   const insets = useSafeAreaInsets();
   const token = useToken();
   const today = useQuery(api.today.get, token ? { token, groupId } : "skip");
+  const member = Boolean(today);
+  // Next launch opens straight into the group this device opened last (home.tsx).
+  useEffect(() => {
+    if (member) rememberGroup(groupId);
+  }, [member, groupId]);
 
   const toPlay = !!today?.game && today.group.phase === "open" && today.myPlay.status !== "done";
   const finale = today?.group.phase === "finale";
   const base = `/g/${groupId}`;
-  // On a wide window, keep the three tabs inside the same 480-point column as the content.
+  // On a wide window, keep the tabs inside the same 480-point column as the content.
   const { width } = useWindowDimensions();
   const inset = Math.max(0, (width - layout.maxWidth) / 2);
 
@@ -42,6 +50,9 @@ export function GroupTabs({ groupId }: { groupId: Id<"groups"> }) {
           </TabTrigger>
           <TabTrigger name="board" href={`${base}/board`} asChild>
             <TabButton icon="board" label="Board" dot={finale} testID="tab-board" />
+          </TabTrigger>
+          <TabTrigger name="sunday" href={`${base}/sunday`} asChild>
+            <TabButton icon="hourglass" label="Sunday" testID="tab-sunday" />
           </TabTrigger>
           <TabTrigger name="crew" href={`${base}/crew`} asChild>
             <TabButton icon="crew" label="Crew" testID="tab-crew" />

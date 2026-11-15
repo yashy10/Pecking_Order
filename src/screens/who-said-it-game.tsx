@@ -6,7 +6,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInRight, FlipInEasyX } from "react-native-reanimated";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { Avatar, Button, Card, EmptyState, Icon, Loading, Pill, Screen, Txt } from "@/components/ui";
+import { SealedResult } from "@/components/sealed-result";
+import { Avatar, Button, Card, EmptyState, Loading, Pill, Screen, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
@@ -18,7 +19,15 @@ import * as haptics from "@/utils/haptics";
 type Round = NonNullable<FunctionReturnType<typeof api.whoSaidIt.get>>;
 type Result = NonNullable<Round["result"]>;
 
-export function WhoSaidItGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: Id<"games"> }) {
+type GameProps = {
+  groupId: Id<"groups">;
+  gameId: Id<"games">;
+  multiplier: number;
+  /** Automatic groups: when today's scores are revealed. */
+  revealAt: number | null;
+};
+
+export function WhoSaidItGame({ groupId, gameId, multiplier, revealAt }: GameProps) {
   const token = useToken();
   const round = useQuery(api.whoSaidIt.get, token ? { token, gameId } : "skip");
   const submit = useMutation(api.whoSaidIt.submit);
@@ -53,7 +62,17 @@ export function WhoSaidItGame({ groupId, gameId }: { groupId: Id<"groups">; game
 
   const finished = result ?? round.result;
   if (finished) {
-    return <Results round={round} result={finished} picks={picks} onDone={leave} />;
+    return (
+      <Results
+        groupId={groupId}
+        multiplier={multiplier}
+        revealAt={revealAt}
+        round={round}
+        result={finished}
+        picks={picks}
+        onDone={leave}
+      />
+    );
   }
 
   const quotes = round.quotes;
@@ -157,11 +176,17 @@ export function WhoSaidItGame({ groupId, gameId }: { groupId: Id<"groups">; game
 }
 
 function Results({
+  groupId,
+  multiplier,
+  revealAt,
   round,
   result,
   picks,
   onDone,
 }: {
+  groupId: Id<"groups">;
+  multiplier: number;
+  revealAt: number | null;
   round: Round;
   result: Result;
   picks: Record<string, Id<"members">>;
@@ -169,21 +194,25 @@ function Results({
 }) {
   const byAnswer = new Map(result.reveal.map((r) => [r.answerId, r]));
   return (
-    <Screen back title="Who Said It" subtitle="Round over">
-      <Card testID="wsi-result" style={styles.resultHead}>
+    <Screen back title="Who Said It" subtitle="Round over" backTo={`/g/${groupId}`}>
+      <SealedResult
+        testID="wsi-result"
+        groupId={groupId}
+        points={result.points}
+        multiplier={multiplier}
+        revealAt={revealAt}
+        onBack={onDone}
+      >
         <Txt variant="overline" color={colors.muted}>
-          {result.correct} of {result.asked} right
+          You got
         </Txt>
-        <View style={styles.sealed}>
-          <Icon name="lock" size={20} color={colors.primary} />
-          <Txt variant="title" tabular>
-            {result.points} points sealed
-          </Txt>
-        </View>
-        <Txt color={colors.muted} align="center">
-          Nobody sees scores until tonight's reveal.
+        <Txt variant="display" align="center" tabular>
+          {result.correct} of {result.asked}
         </Txt>
-      </Card>
+      </SealedResult>
+      <Txt variant="overline" color={colors.muted}>
+        Who really said it
+      </Txt>
       {round.quotes.map((q, i) => {
         const author = byAnswer.get(q.answerId);
         const mine = picks[q.answerId];
@@ -207,7 +236,7 @@ function Results({
           </Animated.View>
         );
       })}
-      <Button label="Back to the group" onPress={onDone} />
+      <Button variant="secondary" label="Back to today" onPress={onDone} />
     </Screen>
   );
 }
@@ -236,8 +265,6 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
   chipPressed: { transform: [{ scale: 0.98 }] },
   chipName: { flex: 1 },
-  resultHead: { alignItems: "center" },
-  sealed: { flexDirection: "row", alignItems: "center", gap: space(2) },
   authorRow: { flexDirection: "row", alignItems: "center", gap: space(2) },
   grow: { flex: 1 },
 });

@@ -30,6 +30,15 @@ async function loadGroup(ctx: QueryCtx | MutationCtx, groupId: Id<"groups">) {
   return group;
 }
 
+/**
+ * Once the presenter moves a group's clock by hand, the automatic clock lets go of it,
+ * so the two never fight over the same group.
+ */
+async function takeManualControl(ctx: MutationCtx, groupId: Id<"groups">): Promise<void> {
+  const group = await loadGroup(ctx, groupId);
+  if (group.autoClock) await ctx.db.patch("groups", groupId, { autoClock: false, nextTickAt: undefined });
+}
+
 function shuffle<T>(items: readonly T[]): T[] {
   const out = [...items];
   for (let i = out.length - 1; i > 0; i--) {
@@ -288,6 +297,7 @@ export const advance = mutation({
   returns: v.null(),
   handler: async (ctx, { demoKey, groupId }) => {
     checkDemoKey(demoKey);
+    await takeManualControl(ctx, groupId);
     await advanceGroup(ctx, groupId);
     return null;
   },
@@ -299,6 +309,7 @@ export const makeItWednesday = mutation({
   returns: v.null(),
   handler: async (ctx, { demoKey, groupId }) => {
     checkDemoKey(demoKey);
+    await takeManualControl(ctx, groupId);
     const group = await loadGroup(ctx, groupId);
     if (group.day === WILDCARD_DAY && group.phase === "open") return null;
     if (group.phase === "open" && group.day <= LAST_GAME_DAY) await revealDay(ctx, group);
@@ -364,6 +375,7 @@ export const jumpToSunday = mutation({
   returns: v.null(),
   handler: async (ctx, { demoKey, groupId }) => {
     checkDemoKey(demoKey);
+    await takeManualControl(ctx, groupId);
     const group = await loadGroup(ctx, groupId);
     if (group.phase === "finale") return null;
     if (group.phase === "open" && group.day <= LAST_GAME_DAY) await revealDay(ctx, group);
@@ -378,6 +390,7 @@ export const resetWeek = mutation({
   returns: v.null(),
   handler: async (ctx, { demoKey, groupId }) => {
     checkDemoKey(demoKey);
+    await takeManualControl(ctx, groupId);
     await startNewWeek(ctx, await loadGroup(ctx, groupId));
     return null;
   },

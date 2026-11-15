@@ -3,6 +3,7 @@ import { query } from "./_generated/server";
 import { findMember } from "./lib/auth";
 import { dayLabel, MAX_MEMBERS } from "./lib/constants";
 import { gameFor, membersOf, promptFor } from "./lib/day";
+import { finaleAt } from "./lib/schedule";
 import { gameTypeV, phaseV } from "./schema";
 
 // Owned by Track A. Phase 0: working version.
@@ -21,7 +22,9 @@ export const get = query({
         dayLabel: v.string(),
         phase: phaseV,
         memberCount: v.number(),
+        // Automatic groups only; null for demo groups, which the presenter moves.
         nextTickAt: v.union(v.number(), v.null()),
+        finaleAt: v.union(v.number(), v.null()), // this week's Sunday 9 PM
       }),
       myMemberId: v.id("members"),
       game: v.union(
@@ -92,7 +95,9 @@ export const get = query({
         dayLabel: dayLabel(group.day),
         phase: group.phase,
         memberCount: members.length,
-        nextTickAt: group.nextTickAt ?? null,
+        nextTickAt: group.autoClock ? (group.nextTickAt ?? null) : null,
+        finaleAt:
+          group.autoClock && group.weekStartsAt !== undefined ? finaleAt(group.weekStartsAt) : null,
       },
       myMemberId: me._id,
       game: game ? { gameId: game._id, type: game.type, multiplier: game.multiplier } : null,

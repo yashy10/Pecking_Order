@@ -1,11 +1,13 @@
 import { useQuery } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Button, EmptyState, Loading, Screen } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { BlurGame } from "@/screens/blur-game";
 import { WhoSaidItGame } from "@/screens/who-said-it-game";
+import { rememberGroup } from "@/utils/last-group";
 
 // Frozen in Phase 0. Owned by the lead. Picks today's game.
 
@@ -14,6 +16,9 @@ export default function PlayRoute() {
   const id = groupId as Id<"groups">;
   const token = useToken();
   const today = useQuery(api.today.get, token ? { token, groupId: id } : "skip");
+  useEffect(() => {
+    if (today) rememberGroup(id);
+  }, [today, id]);
 
   if (today === undefined) {
     return (
@@ -31,10 +36,12 @@ export default function PlayRoute() {
       </Screen>
     );
   }
-  const { gameId, type } = today.game;
+  const { gameId, type, multiplier } = today.game;
+  // Automatic groups know when today's reveal is; demo groups reveal when the presenter says.
+  const revealAt = today.group.phase === "open" ? today.group.nextTickAt : null;
   return type === "blur" ? (
-    <BlurGame key={gameId} groupId={id} gameId={gameId} />
+    <BlurGame key={gameId} groupId={id} gameId={gameId} multiplier={multiplier} revealAt={revealAt} />
   ) : (
-    <WhoSaidItGame key={gameId} groupId={id} gameId={gameId} />
+    <WhoSaidItGame key={gameId} groupId={id} gameId={gameId} multiplier={multiplier} revealAt={revealAt} />
   );
 }

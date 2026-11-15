@@ -154,7 +154,7 @@ Time is a per-group state machine, never the wall clock. That is what lets the d
 
 A new group starts at `(Mon, open)` with a Blur game already created, so the first person in has something to play immediately.
 
-**Real mode (P2).** Groups with `autoClock: true` carry a `nextTickAt`. A cron runs `clock.tick` every minute and advances any group that is due. Demo groups have `autoClock: false` and move only when the demo panel says so. Aligning to the real calendar and to each group's timezone is post-hackathon.
+**Real mode (built at 3:15 PM).** A group made from the home screen sends the creator's UTC offset and gets `autoClock: true`, a `weekStartsAt` (that week's Monday 00:00 local) and a `nextTickAt`. It follows the real calendar: each game opens at midnight and is revealed at 9 PM, Sunday's finale is at 9 PM, and a new week starts Monday at midnight. A group made after 9 PM starts with the next day's game, open early; one made on Saturday night or Sunday starts with Monday's. `convex/crons.ts` runs `clock.tick` every minute. It finds due groups through `by_autoClock_and_nextTickAt` and hands each to `clock.advanceDue` in its own transaction. `advanceGroup` then sets the next `nextTickAt` from `convex/lib/schedule.ts`, which has 10 tests. A late run catches up one step a minute. Demo groups keep `autoClock: false`, and any demo-panel move switches a group to manual. `npx convex run clock:dueNow '{"groupId":"…"}'` makes a group's next step due now, for testing. Limits: a fixed UTC offset ignores daylight saving, and there is no push yet.
 
 ### 6.3 Scoring and powers
 

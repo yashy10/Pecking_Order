@@ -20,12 +20,12 @@ Built at the Consumer Mobile Hackathon, November 15, 2026.
 | **Sealed scores** | You see your own score, and nobody else's, until the evening reveal. |
 | **Nearest rivals** | No rank and no count. Just the person directly above you, the person directly below, and the gaps. First place sees fog above them too, so even the leader can't be sure. |
 | **Powers** | Earned, never bought. Ghost hides you from your rivals' boards for a day; Spy shows two more places above you. |
-| **The week** | Wildcard Wednesday counts double. Sunday drops the full board, crowns a champion and resets for Monday. |
+| **The week** | Wildcard Wednesday counts double. Sunday drops the full board, crowns a champion and resets for Monday. The Sunday tab counts down to it, to the second. |
 
 ## What's interesting under the hood
 
 - **The hidden board is enforced on the server.** The rivals query returns only your neighbours, with Ghost and Spy already applied, and every function declares a strict return validator. Full standings exist in exactly one place, the finale, and only on Sunday. The rule set is in `convex/lib/standings.ts`, with 14 tests.
-- **Time is a state machine, not a clock.** Each group moves through Monday open, Monday revealed, Tuesday open and so on to the finale, one step at a time (`convex/clock.ts`). That's what lets the hidden demo panel at `/demo` run a whole week in three minutes.
+- **Time is a state machine, not a clock.** Each group moves through Monday open, Monday revealed, Tuesday open and so on to the finale, one step at a time (`convex/clock.ts`). That's what lets the hidden demo panel at `/demo` run a whole week in three minutes. Real groups run themselves: a Convex cron moves each one on the real calendar in its creator's time zone. Games open at midnight, scores are revealed at 9 PM, and the finale is Sunday at 9 PM (`convex/crons.ts`, `convex/lib/schedule.ts`).
 - **Nothing to trust on the phone.** Blur's timer runs on the server and the answer never leaves it until you've finished. Who Said It never sends an author before you submit.
 - **AI only where it can't break the demo.** One OpenAI call per reveal rewrites the day's answers into a neutral voice, ahead of time. If it fails, the game uses the raw answers.
 - **Season Pass on Whop.** Free and cosmetic only: a ring on your avatar. Checkout is tagged with the player, and a signature-checked webhook turns the ring on live (`convex/whop.ts`, `convex/http.ts`).

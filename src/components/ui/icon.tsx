@@ -23,7 +23,8 @@ export type IconName =
   | "plus"
   | "edit"
   | "info"
-  | "sparkle";
+  | "sparkle"
+  | "hourglass";
 
 type Props = { name: IconName; size?: number; color?: string; strokeWidth?: number };
 
@@ -127,5 +128,13 @@ function draw(name: IconName, s: Stroke, color: string) {
       );
     case "sparkle":
       return <Path d="M12 3.5l1.9 5.3 5.6 1.7-5.6 1.8L12 17.5l-1.9-5.2-5.6-1.8 5.6-1.7L12 3.5zM18.5 16l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" {...s} />;
+    case "hourglass":
+      return (
+        <>
+          <Path d="M6.5 3.5h11M6.5 20.5h11" {...s} />
+          <Path d="M8 3.5c0 4.2 4 5.6 4 8.5s-4 4.3-4 8.5M16 3.5c0 4.2-4 5.6-4 8.5s4 4.3 4 8.5" {...s} />
+          <Path d="M9.6 18.6h4.8L12 16.4z" fill={color} stroke="none" />
+        </>
+      );
   }
 }

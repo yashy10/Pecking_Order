@@ -12,7 +12,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { Button, Card, EmptyState, Field, Icon, Loading, Pill, Screen, Txt } from "@/components/ui";
+import { SealedResult } from "@/components/sealed-result";
+import { Button, EmptyState, Field, Loading, Pill, Screen, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, radius, space } from "@/theme";
 import { BLUR_IMAGE_SOURCES } from "@/utils/blur-images";
@@ -28,7 +29,15 @@ const TICK_MS = 500;
 type Round = { imageKey: string; roundMs: number; hardStopMs: number };
 type Result = { points: number; answer: string; correct: boolean };
 
-export function BlurGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: Id<"games"> }) {
+type GameProps = {
+  groupId: Id<"groups">;
+  gameId: Id<"games">;
+  multiplier: number;
+  /** Automatic groups: when today's scores are revealed. */
+  revealAt: number | null;
+};
+
+export function BlurGame({ groupId, gameId, multiplier, revealAt }: GameProps) {
   const token = useToken();
   const start = useMutation(api.blur.start);
   const guess = useMutation(api.blur.guess);
@@ -167,26 +176,22 @@ export function BlurGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: I
       </View>
 
       {result ? (
-        <Card testID="blur-result" style={styles.result}>
+        <SealedResult
+          testID="blur-result"
+          backTestID="back-to-group"
+          groupId={groupId}
+          points={result.points}
+          multiplier={multiplier}
+          revealAt={revealAt}
+          onBack={leave}
+        >
           <Txt variant="overline" color={result.correct ? colors.good : colors.muted}>
             {result.correct ? "You got it. It was" : "Out of time. It was"}
           </Txt>
           <Txt variant="display" align="center">
             {result.answer}
           </Txt>
-          <View style={styles.sealed}>
-            <Icon name="lock" size={18} color={colors.primary} />
-            <Txt variant="heading" tabular>
-              {result.points} points sealed
-            </Txt>
-          </View>
-          <Txt color={colors.muted} align="center">
-            Nobody sees scores until tonight's reveal.
-          </Txt>
-          <View style={styles.stretch}>
-            <Button testID="back-to-group" label="Back to the group" onPress={leave} />
-          </View>
-        </Card>
+        </SealedResult>
       ) : (
         <>
           <Animated.View style={[styles.guessRow, shakeStyle]}>
@@ -272,7 +277,4 @@ const styles = StyleSheet.create({
   guessRow: { flexDirection: "row", alignItems: "center", gap: space(2) },
   grow: { flex: 1 },
   wrongRow: { flexDirection: "row", alignItems: "center", gap: space(2) },
-  result: { alignItems: "center" },
-  stretch: { alignSelf: "stretch", marginTop: space(1) },
-  sealed: { flexDirection: "row", alignItems: "center", gap: space(2) },
 });

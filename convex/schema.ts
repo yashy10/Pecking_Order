@@ -49,8 +49,12 @@ export default defineSchema({
     week: v.number(), // starts at 1
     day: v.number(), // 0 = Mon … 6 = Sun
     phase: phaseV,
-    autoClock: v.boolean(),
+    autoClock: v.boolean(), // true: the cron moves it on the real calendar; false: the demo panel does
     nextTickAt: v.optional(v.number()),
+    // Automatic groups only (convex/lib/schedule.ts): the creator's UTC offset in minutes,
+    // and the instant this week's Monday began, local time.
+    utcOffsetMinutes: v.optional(v.number()),
+    weekStartsAt: v.optional(v.number()),
   })
     .index("by_inviteCode", ["inviteCode"])
     .index("by_autoClock_and_nextTickAt", ["autoClock", "nextTickAt"]),

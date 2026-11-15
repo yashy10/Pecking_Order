@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "convex/react";
 import { Redirect, router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "@convex/_generated/api";
 import { ProfileForm } from "@/components/profile-form";
@@ -9,6 +9,7 @@ import { ONE_LINER } from "@/constants";
 import { useToken } from "@/hooks/use-identity";
 import { colors, fonts, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
+import { lastGroup } from "@/utils/last-group";
 
 // Owned by Track A. The table: the brand at the top, an empty centre, and everything you
 // can do in the lower third, where a thumb reaches (from docs/design/board_game_mobile_backdrop.html).
@@ -16,13 +17,37 @@ import { errorMessage } from "@/utils/errors";
 
 type Panel = "create" | "join" | "profile" | null;
 
+// Once per launch, a returning player skips this list: straight into the group this
+// device opened last, or their only group. Coming back here later doesn't bounce them.
+let launchChecked = false;
+
 export function Home() {
   const token = useToken();
   const me = useQuery(api.users.me, token ? { token } : "skip");
   const groups = useQuery(api.groups.mine, token ? { token } : "skip");
   const [chosen, setPanel] = useState<Panel | undefined>(undefined);
+  const [opening, setOpening] = useState(!launchChecked);
 
-  const loading = !token || me === undefined;
+  useEffect(() => {
+    if (launchChecked || !token || me === undefined || (me && groups === undefined)) return;
+    let cancelled = false;
+    void (async () => {
+      const ready = me !== null && me.signedIn && !me.needsProfile && groups !== undefined && groups.length > 0;
+      const last = ready ? await lastGroup() : null;
+      if (cancelled || launchChecked) return;
+      launchChecked = true;
+      const pick = ready
+        ? (groups.find((g) => g.groupId === last) ?? (groups.length === 1 ? groups[0] : undefined))
+        : undefined;
+      if (pick) router.replace(`/g/${pick.groupId}`);
+      else setOpening(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, me, groups]);
+
+  const loading = !token || me === undefined || opening;
   const hasGroups = (groups?.length ?? 0) > 0;
   // With no groups yet, hosting is the obvious next step, so it starts open.
   const panel = chosen === undefined ? (groups !== undefined && !hasGroups ? "create" : null) : chosen;
@@ -162,7 +187,10 @@ function CreateGroup() {
     setBusy(true);
     setError(null);
     try {
-      const { groupId } = await create({ token, name });
+      // The device's UTC offset puts the group on the real calendar in the host's time zone:
+      // games open at midnight, scores are revealed at 9 PM, the finale is Sunday at 9 PM.
+      const utcOffsetMinutes = -new Date().getTimezoneOffset();
+      const { groupId } = await create({ token, name, utcOffsetMinutes });
       setName("");
       router.push(`/g/${groupId}`);
     } catch (e) {

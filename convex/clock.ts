@@ -12,6 +12,7 @@ import {
   WILDCARD_MULTIPLIER,
 } from "./lib/constants";
 import { activePowers, byStanding, gameFor, membersOf, promptFor } from "./lib/day";
+import { nextTickAt, WEEK } from "./lib/schedule";
 import { createPrompt } from "./prompts";
 import { createWhoSaidItGame } from "./whoSaidIt";
 
@@ -20,8 +21,12 @@ import { createWhoSaidItGame } from "./whoSaidIt";
 //   (Mon, open) → (Mon, revealed) → (Tue, open) → … → (Sat, revealed)
 //   → (Sun, open: no game) → (Sun, finale) → next week (Mon, open)
 //
-// Time never comes from the wall clock: the demo panel (and later a cron)
-// moves a group one step at a time.
+// Every move is one step of this machine. Two things take steps: the demo panel, for
+// demo groups (autoClock: false), and a cron for groups made from the home screen
+// (autoClock: true), which follow the real calendar in lib/schedule.ts.
+
+/** Cron batch size. Anything left over is picked up a minute later. */
+const DUE_BATCH = 25;
 
 export const advance = internalMutation({
   args: { groupId: v.id("groups") },
@@ -32,16 +37,86 @@ export const advance = internalMutation({
   },
 });
 
-/** Moves a group exactly one step. */
+/**
+ * Runs every minute (crons.ts). Hands each automatic group whose next step is due to its
+ * own transaction, so one big group's reveal can't hold up the rest.
+ */
+export const tick = internalMutation({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const due = await ctx.db
+      .query("groups")
+      .withIndex("by_autoClock_and_nextTickAt", (q) =>
+        q.eq("autoClock", true).gte("nextTickAt", 0).lte("nextTickAt", Date.now()),
+      )
+      .take(DUE_BATCH);
+    for (const group of due) {
+      if (group.nextTickAt === undefined) continue;
+      await ctx.scheduler.runAfter(0, internal.clock.advanceDue, {
+        groupId: group._id,
+        dueAt: group.nextTickAt,
+      });
+    }
+    return due.length;
+  },
+});
+
+/**
+ * One due step. `dueAt` makes it idempotent: if the group has already moved (an earlier
+ * run, or the demo panel took it over), its nextTickAt differs and this does nothing.
+ * A group that fell behind catches up one step per minute.
+ */
+export const advanceDue = internalMutation({
+  args: { groupId: v.id("groups"), dueAt: v.number() },
+  returns: v.null(),
+  handler: async (ctx, { groupId, dueAt }) => {
+    const group = await ctx.db.get("groups", groupId);
+    if (!group || !group.autoClock || group.nextTickAt !== dueAt || dueAt > Date.now()) return null;
+    await advanceGroup(ctx, groupId);
+    return null;
+  },
+});
+
+/**
+ * For the developer, from the CLI or dashboard: make an automatic group's next step due
+ * now, so the next cron run takes it. The step after is back on the calendar.
+ *   npx convex run clock:dueNow '{"groupId":"…"}'
+ */
+export const dueNow = internalMutation({
+  args: { groupId: v.id("groups") },
+  returns: v.null(),
+  handler: async (ctx, { groupId }) => {
+    const group = await ctx.db.get("groups", groupId);
+    if (!group?.autoClock) throw new ConvexError("Only automatic groups run on a schedule.");
+    await ctx.db.patch("groups", groupId, { nextTickAt: Date.now() });
+    return null;
+  },
+});
+
+/** Moves a group exactly one step, then, for an automatic group, sets when the next is due. */
 export async function advanceGroup(ctx: MutationCtx, groupId: Id<"groups">): Promise<void> {
   const group = await ctx.db.get("groups", groupId);
   if (!group) throw new ConvexError("Group not found.");
+  await step(ctx, group);
+  if (group.autoClock && group.weekStartsAt !== undefined) {
+    const moved = await ctx.db.get("groups", groupId);
+    if (!moved) return;
+    const weekStartsAt = moved.week > group.week ? group.weekStartsAt + WEEK : group.weekStartsAt;
+    await ctx.db.patch("groups", groupId, {
+      weekStartsAt,
+      nextTickAt: nextTickAt({ day: moved.day, phase: moved.phase }, weekStartsAt),
+    });
+  }
+}
+
+async function step(ctx: MutationCtx, group: Doc<"groups">): Promise<void> {
   if (group.phase === "finale") return await startNewWeek(ctx, group);
   if (group.day === SUNDAY) return await runFinale(ctx, group);
   if (group.phase === "open") return await revealDay(ctx, group);
   const next = group.day + 1; // revealed, Monday to Saturday
-  await ctx.db.patch("groups", groupId, { day: next, phase: "open" });
-  await startDay(ctx, groupId, group.week, next); // nothing to create on Sunday
+  await ctx.db.patch("groups", group._id, { day: next, phase: "open" });
+  await startDay(ctx, group._id, group.week, next); // nothing to create on Sunday
 }
 
 /** Creates a day's game and prompt. Safe to call twice. */

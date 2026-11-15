@@ -4,6 +4,7 @@ import { startDay } from "./clock";
 import { findUser, requireUser } from "./lib/auth";
 import { dayLabel, GROUP_NAME_MAX_CHARS } from "./lib/constants";
 import { membersOf, newMemberDoc } from "./lib/day";
+import { MAX_OFFSET_MINUTES, MIN_OFFSET_MINUTES, nextTickAt, startingPoint } from "./lib/schedule";
 import { phaseV } from "./schema";
 
 // Owned by Track A. Phase 0: working version.
@@ -44,8 +45,13 @@ export const preview = query({
   },
 });
 
+/**
+ * With the creator's UTC offset (current apps always send it), the group runs itself on
+ * the real calendar: games open at midnight, reveals at 9 PM, the finale Sunday night.
+ * Without it (an app from before the automatic clock), it stays manual.
+ */
 export const create = mutation({
-  args: { token: v.string(), name: v.string() },
+  args: { token: v.string(), name: v.string(), utcOffsetMinutes: v.optional(v.number()) },
   returns: v.object({ groupId: v.id("groups"), inviteCode: v.string() }),
   handler: async (ctx, args) => {
     const profile = await requireUser(ctx, args.token);
@@ -57,16 +63,30 @@ export const create = mutation({
     for (let tries = 0; tries < 10 && (await groupByCode(ctx, inviteCode)); tries++) {
       inviteCode = randomCode();
     }
+    const offset = args.utcOffsetMinutes;
+    const auto =
+      offset !== undefined &&
+      Number.isInteger(offset) &&
+      offset >= MIN_OFFSET_MINUTES &&
+      offset <= MAX_OFFSET_MINUTES;
+    const start = auto ? startingPoint(Date.now(), offset) : { weekStartsAt: undefined, day: 0 };
     const groupId = await ctx.db.insert("groups", {
       name,
       inviteCode,
       week: 1,
-      day: 0,
+      day: start.day,
       phase: "open",
-      autoClock: false,
+      autoClock: auto,
+      ...(auto && start.weekStartsAt !== undefined
+        ? {
+            utcOffsetMinutes: offset,
+            weekStartsAt: start.weekStartsAt,
+            nextTickAt: nextTickAt({ day: start.day, phase: "open" }, start.weekStartsAt),
+          }
+        : {}),
     });
     await ctx.db.insert("members", newMemberDoc(groupId, profile));
-    await startDay(ctx, groupId, 1, 0);
+    await startDay(ctx, groupId, 1, start.day);
     return { groupId, inviteCode };
   },
 });
