@@ -19,7 +19,7 @@ export function Skeleton({ height = 16, width = "100%", round }: { height?: numb
   const style = useAnimatedStyle(() => ({ opacity: o.value }));
   return (
     <Animated.View
-      style={[styles.block, { height, width, borderRadius: round ? height / 2 : radius.field / 2 }, style]}
+      style={[styles.block, { height, width, borderRadius: round ? height / 2 : radius.field }, style]}
     />
   );
 }

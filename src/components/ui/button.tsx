@@ -1,14 +1,17 @@
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
-import { colors, elevation, glass, motion, radius, space } from "@/theme";
+import { colors, edgeShadow, radius, space } from "@/theme";
 import { tap } from "@/utils/haptics";
 import { Icon, type IconName } from "./icon";
+import { usePlace } from "./place";
 import { Txt } from "./txt";
 
 /**
- * primary   — the one main action on a screen: solid brass
- * secondary — a glass alternative next to a primary
- * tonal     — brass-trimmed glass for a frequent action that shouldn't compete
+ * primary   — the one main action on a screen: a chunky block in the place's colour
+ * secondary — a white block next to a primary
+ * tonal     — a soft tint of the place's colour, for a frequent action that shouldn't compete
  * ghost     — a quiet text action
+ *
+ * The solid bottom edge is the "toy" depth: pressing the button pushes it down onto the edge.
  */
 type Variant = "primary" | "secondary" | "tonal" | "ghost";
 
@@ -24,13 +27,6 @@ type Props = {
   accessibilityHint?: string;
 };
 
-const INK: Record<Variant, string> = {
-  primary: colors.primaryInk,
-  secondary: colors.ink,
-  tonal: colors.accent,
-  ghost: colors.accent,
-};
-
 export function Button({
   label,
   onPress,
@@ -42,8 +38,16 @@ export function Button({
   testID,
   accessibilityHint,
 }: Props) {
+  const place = usePlace();
   const inactive = disabled || loading;
-  const ink = INK[variant];
+  const depth = size === "sm" ? 3 : 5;
+  const look = {
+    primary: { bg: place.fill, edge: place.edge, ink: colors.primaryInk },
+    secondary: { bg: colors.surface, edge: colors.edge, ink: colors.ink },
+    tonal: { bg: place.soft, edge: place.fill, ink: colors.ink },
+    ghost: { bg: "transparent", edge: null, ink: colors.accent },
+  }[variant];
+
   return (
     <Pressable
       testID={testID}
@@ -59,17 +63,24 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         size === "sm" && styles.sm,
-        styles[variant],
+        { backgroundColor: look.bg },
+        variant === "secondary" && styles.outlined,
+        look.edge
+          ? {
+              marginBottom: depth,
+              boxShadow: edgeShadow(look.edge, pressed ? 1 : depth),
+              transform: [{ translateY: pressed ? depth - 1 : 0 }],
+            }
+          : pressed && styles.ghostPressed,
         inactive && styles.inactive,
-        pressed && styles.pressed,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={ink} />
+        <ActivityIndicator color={look.ink} />
       ) : (
         <View style={styles.content}>
-          {icon ? <Icon name={icon} size={size === "sm" ? 18 : 20} color={ink} /> : null}
-          <Txt variant={size === "sm" ? "label" : "heading"} color={ink} numberOfLines={1} style={styles.label}>
+          {icon ? <Icon name={icon} size={size === "sm" ? 18 : 22} color={look.ink} strokeWidth={2.4} /> : null}
+          <Txt variant={size === "sm" ? "label" : "heading"} color={look.ink} numberOfLines={1}>
             {label}
           </Txt>
         </View>
@@ -80,33 +91,15 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 52,
+    minHeight: 58,
     borderRadius: radius.field,
     paddingHorizontal: space(5),
     alignItems: "center",
     justifyContent: "center",
   },
-  sm: { minHeight: 42, paddingHorizontal: space(4) },
+  sm: { minHeight: 44, paddingHorizontal: space(4), borderRadius: 14 },
+  outlined: { borderWidth: 2, borderColor: colors.border },
   content: { flexDirection: "row", alignItems: "center", gap: space(2) },
-  label: { letterSpacing: 0.3 },
-  primary: {
-    backgroundColor: colors.primary,
-    backgroundImage: glass.brassSolid,
-    boxShadow: elevation.brass,
-  },
-  secondary: {
-    backgroundColor: "rgba(18, 22, 30, 0.72)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.10)",
-    boxShadow: elevation.card,
-  },
-  tonal: {
-    backgroundColor: "rgba(18, 22, 30, 0.6)",
-    backgroundImage: glass.brassFill,
-    borderWidth: 1,
-    borderColor: glass.brassEdge,
-  },
-  ghost: { backgroundColor: "transparent" },
-  inactive: { opacity: 0.4 },
-  pressed: { opacity: 0.88, transform: [{ scale: motion.press }] },
+  inactive: { opacity: 0.45 },
+  ghostPressed: { opacity: 0.6 },
 });

@@ -1,15 +1,21 @@
 import type { TabTriggerSlotProps } from "expo-router/ui";
 import { Pressable, StyleSheet, View } from "react-native";
-import { colors, space } from "@/theme";
+import { colors, places, space, type Place } from "@/theme";
 import { tap } from "@/utils/haptics";
 import { Icon, type IconName } from "./icon";
 import { Txt } from "./txt";
 
-type Props = TabTriggerSlotProps & { icon: IconName; label: string; dot?: boolean };
+type Props = TabTriggerSlotProps & {
+  icon: IconName;
+  label: string;
+  dot?: boolean;
+  /** The tab's own colour: the same one its screen wears. */
+  place?: Place;
+};
 
 /** One tab in the bottom bar. Used through TabTrigger's asChild, which passes isFocused and onPress. */
-export function TabButton({ icon, label, dot, isFocused, onPress, ref, ...rest }: Props) {
-  const ink = isFocused ? colors.accent : colors.muted;
+export function TabButton({ icon, label, dot, place = "today", isFocused, onPress, ref, ...rest }: Props) {
+  const tint = places[place];
   return (
     <Pressable
       {...rest}
@@ -24,12 +30,12 @@ export function TabButton({ icon, label, dot, isFocused, onPress, ref, ...rest }
       style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
     >
       <View>
-        <View style={[styles.pill, isFocused && styles.pillOn]}>
-          <Icon name={icon} size={22} color={ink} strokeWidth={isFocused ? 2.2 : 1.9} />
+        <View style={[styles.pill, isFocused && { backgroundColor: tint.fill }]}>
+          <Icon name={icon} size={24} color={isFocused ? colors.ink : colors.muted} strokeWidth={isFocused ? 2.6 : 2.2} />
         </View>
         {dot ? <View style={styles.dot} /> : null}
       </View>
-      <Txt variant="caption" color={ink} style={isFocused ? styles.labelOn : styles.label}>
+      <Txt variant="caption" color={isFocused ? colors.ink : colors.muted}>
         {label}
       </Txt>
     </Pressable>
@@ -37,21 +43,18 @@ export function TabButton({ icon, label, dot, isFocused, onPress, ref, ...rest }
 }
 
 const styles = StyleSheet.create({
-  tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2, paddingTop: space(1.5), paddingBottom: space(1) },
+  tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 3, paddingTop: space(2), paddingBottom: space(1) },
   pressed: { opacity: 0.7 },
-  pill: { width: 56, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  pillOn: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: "rgba(212, 175, 55, 0.35)" },
-  label: { fontWeight: "600" },
-  labelOn: { fontWeight: "800" },
+  pill: { width: 60, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   dot: {
     position: "absolute",
-    top: 2,
-    right: 12,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: colors.terracotta,
-    borderWidth: 1.5,
-    borderColor: colors.bg,
+    top: 0,
+    right: 8,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.bad,
+    borderWidth: 2,
+    borderColor: colors.surface,
   },
 });

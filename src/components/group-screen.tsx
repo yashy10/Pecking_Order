@@ -5,6 +5,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Button, EmptyState, IconButton, Screen, ScreenSkeleton } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
+import type { Place } from "@/theme";
 import type { Today } from "@/utils/convex";
 
 // Owned by the lead. The frame every group tab shares: the group's name, the day,
@@ -12,16 +13,18 @@ import type { Today } from "@/utils/convex";
 
 type Props = {
   groupId: Id<"groups">;
+  /** The tab's colour world. */
+  place?: Place;
   children: (today: Today) => ReactNode;
 };
 
-export function GroupScreen({ groupId, children }: Props) {
+export function GroupScreen({ groupId, place = "today", children }: Props) {
   const token = useToken();
   const today = useQuery(api.today.get, token ? { token, groupId } : "skip");
 
   if (today === undefined) {
     return (
-      <Screen tabbed back title=" ">
+      <Screen tabbed back place={place} title=" ">
         <ScreenSkeleton />
       </Screen>
     );
@@ -29,11 +32,11 @@ export function GroupScreen({ groupId, children }: Props) {
 
   if (today === null) {
     return (
-      <Screen tabbed back>
+      <Screen tabbed back place={place}>
         <EmptyState
           emoji="🔐"
-          title="You're not in this group"
-          body="This device hasn't joined it. Ask a friend for the invite link, or open it on the device you joined with."
+          title="You're not in this group yet"
+          body="Ask a friend for their invite link, or open the game on the phone you joined with."
         >
           <Button label="Go to my groups" onPress={() => router.replace("/")} />
         </EmptyState>
@@ -46,6 +49,7 @@ export function GroupScreen({ groupId, children }: Props) {
     <Screen
       tabbed
       back
+      place={place}
       title={group.name}
       subtitle={`${group.dayLabel} · Week ${group.week}`}
       right={

@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, elevation, glass, radius, space } from "@/theme";
+import { colors, elevation, radius, space } from "@/theme";
+import { usePlace } from "./place";
 
 type Props = {
   children: ReactNode;
   /**
-   * surface — a glass panel on the table (default)
-   * soft    — a brass-lit panel: the hero of a screen
-   * accent  — the same brass panel (Phase 0 name)
+   * surface — a white card on the page (default)
+   * soft    — tinted with the place's colour: the hero of a screen
+   * accent  — the same tinted card (Phase 0 name)
    * fog     — a dimmed, hidden-information panel
    */
   tone?: "surface" | "accent" | "fog" | "soft";
@@ -18,11 +19,21 @@ type Props = {
 };
 
 export function Card({ children, tone = "surface", flush, style, testID }: Props) {
+  const place = usePlace();
   const lit = tone === "soft" || tone === "accent";
   return (
     <View
       testID={testID}
-      style={[styles.card, lit ? styles.lit : tone === "fog" ? styles.fog : styles.surface, flush && styles.flush, style]}
+      style={[
+        styles.card,
+        lit
+          ? { backgroundColor: place.soft, borderColor: place.fill }
+          : tone === "fog"
+            ? styles.fog
+            : styles.surface,
+        flush && styles.flush,
+        style,
+      ]}
     >
       {children}
     </View>
@@ -32,17 +43,11 @@ export function Card({ children, tone = "surface", flush, style, testID }: Props
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius.card,
-    borderWidth: 1,
-    padding: space(4),
+    borderWidth: 2,
+    padding: space(5),
     gap: space(3),
-    boxShadow: elevation.card,
   },
   flush: { padding: 0, gap: 0, overflow: "hidden" },
-  surface: { backgroundColor: glass.panel, borderColor: glass.edge },
-  lit: {
-    backgroundColor: glass.panelStrong,
-    backgroundImage: glass.brassFill,
-    borderColor: "rgba(212, 175, 55, 0.35)",
-  },
+  surface: { backgroundColor: colors.surface, borderColor: colors.border, boxShadow: elevation.card, marginBottom: 4 },
   fog: { backgroundColor: colors.fog, borderColor: colors.fog },
 });

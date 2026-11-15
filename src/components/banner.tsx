@@ -7,7 +7,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Icon, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, elevation, glass, radius, space } from "@/theme";
+import { colors, elevation, radius, space } from "@/theme";
 import * as haptics from "@/utils/haptics";
 import { getItem, setItem } from "@/utils/storage";
 
@@ -66,8 +66,8 @@ export function Banner({ groupId }: { groupId: Id<"groups"> }) {
     <Animated.View entering={FadeInDown.springify()} exiting={FadeOut} key={newestId}>
       <View style={styles.card} testID="banner" accessibilityLiveRegion="polite">
         <View style={styles.head}>
-          <Txt variant="overline" color={colors.accent} style={styles.grow}>
-            Since the last reveal
+          <Txt variant="overline" color={colors.ink} style={styles.grow}>
+            News!
           </Txt>
           <Pressable
             accessibilityRole="button"
@@ -101,11 +101,11 @@ function unseenEvents(events: Event[] | undefined, seen: string | null | undefin
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: glass.panelStrong,
-    backgroundImage: glass.brassFill,
-    borderWidth: 1,
-    borderColor: glass.brassEdge,
-    boxShadow: elevation.raised,
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.border,
+    boxShadow: elevation.card,
+    marginBottom: 4,
     borderRadius: radius.card,
     padding: space(4),
     paddingTop: space(3),
@@ -114,15 +114,15 @@ const styles = StyleSheet.create({
   head: { flexDirection: "row", alignItems: "center" },
   grow: { flex: 1 },
   close: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: colors.raised,
   },
-  closePressed: { backgroundColor: "rgba(255, 255, 255, 0.24)" },
+  closePressed: { backgroundColor: colors.border },
   row: { flexDirection: "row", alignItems: "center", gap: space(3) },
-  icon: { fontSize: 22 },
+  icon: { fontSize: 26 },
   text: { flex: 1, color: colors.ink },
 });

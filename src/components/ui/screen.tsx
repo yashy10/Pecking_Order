@@ -2,9 +2,10 @@ import { router } from "expo-router";
 import type { ReactNode } from "react";
 import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, layout, space } from "@/theme";
+import { colors, layout, space, type Place } from "@/theme";
 import { Backdrop } from "./backdrop";
 import { IconButton } from "./icon-button";
+import { PlaceProvider } from "./place";
 import { Txt } from "./txt";
 
 // Every screen is wrapped in Screen. It owns safe areas and the keyboard on
@@ -23,7 +24,9 @@ type Props = {
   wide?: boolean; // the demo panel on a projector; every player screen stays narrow
   /** Inside the group tabs: the tab bar below owns the bottom safe area. */
   tabbed?: boolean;
-  /** The table behind the screen: "full" for home and join, "subtle" (default) elsewhere. */
+  /** Which colour world this screen lives in. It tints the backdrop and the main button. */
+  place?: Place;
+  /** The page behind the screen: "full" for home and join, "subtle" (default) elsewhere. */
   backdrop?: "full" | "subtle" | "none";
   /** Let the content column fill the screen height, so a screen can pin blocks to the top and bottom. */
   fill?: boolean;
@@ -40,6 +43,7 @@ export function Screen({
   wide,
   tabbed,
   backdrop = "subtle",
+  place = "home",
   fill,
 }: Props) {
   const insets = useSafeAreaInsets();
@@ -48,6 +52,7 @@ export function Screen({
   const column = <View style={[styles.column, width, fill && styles.fill]}>{children}</View>;
 
   return (
+    <PlaceProvider value={place}>
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: tabbed ? 0 : insets.bottom }]}>
       {backdrop !== "none" ? <Backdrop variant={backdrop} /> : null}
       {showHeader ? (
@@ -64,7 +69,7 @@ export function Screen({
               {title ?? ""}
             </Txt>
             {subtitle ? (
-              <Txt variant="caption" color={colors.muted} numberOfLines={1}>
+              <Txt variant="caption" color={colors.ink} numberOfLines={1}>
                 {subtitle}
               </Txt>
             ) : null}
@@ -86,6 +91,7 @@ export function Screen({
         )}
       </KeyboardAvoidingView>
     </View>
+    </PlaceProvider>
   );
 }
 
@@ -95,18 +101,18 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: space(1),
+    gap: space(3),
     width: "100%",
     maxWidth: layout.maxWidth,
     alignSelf: "center",
     paddingHorizontal: layout.gutter,
     paddingTop: space(2),
     paddingBottom: space(3),
-    minHeight: 60,
+    minHeight: 64,
   },
-  headerWithBack: { paddingLeft: layout.gutter - space(2.5) }, // optically align the chevron with the gutter
+  headerWithBack: {},
   titles: { flex: 1, gap: 1 },
-  right: { flexDirection: "row", alignItems: "center", gap: space(1), marginRight: -space(2) },
+  right: { flexDirection: "row", alignItems: "center", gap: space(2) },
   scroll: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingTop: space(1), paddingBottom: space(8) },
   scrollBare: { paddingTop: space(5) }, // no header above: give the first block room to breathe
   scrollTabbed: { paddingBottom: space(6) },

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { colors, motion, radius } from "@/theme";
 import { tap } from "@/utils/haptics";
 import { Icon, type IconName } from "./icon";
+import { usePlace } from "./place";
 
 type Props = {
   icon: IconName;
@@ -13,8 +14,9 @@ type Props = {
   testID?: string;
 };
 
-/** A 44-point round touch target holding one icon. */
+/** A 48-point round touch target holding one icon. */
 export function IconButton({ icon, label, onPress, tone = "plain", color, testID }: Props) {
+  const place = usePlace();
   return (
     <Pressable
       testID={testID}
@@ -25,15 +27,27 @@ export function IconButton({ icon, label, onPress, tone = "plain", color, testID
         tap();
         onPress();
       }}
-      style={({ pressed }) => [styles.base, tone === "tonal" && styles.tonal, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.base,
+        tone === "tonal" && { backgroundColor: place.soft, borderColor: place.fill },
+        pressed && styles.pressed,
+      ]}
     >
-      <Icon name={icon} size={22} color={color ?? (tone === "tonal" ? colors.primary : colors.ink)} />
+      <Icon name={icon} size={22} color={color ?? colors.ink} strokeWidth={2.4} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  base: { width: 44, height: 44, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
-  tonal: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: "rgba(212, 175, 55, 0.35)" },
+  base: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
   pressed: { backgroundColor: colors.raised, transform: [{ scale: motion.press }] },
 });

@@ -11,12 +11,14 @@ import { convex } from "@/utils/convex";
 
 // Frozen in Phase 0. Owned by the lead.
 
-// Bundled OFL fonts (assets/fonts). Until they load, render the empty table rather than
+// Bundled OFL fonts (assets/fonts). Until they load, render the empty page rather than
 // flashing system-font headings; on a slow web connection give up after 2.5 s and fall back.
 const FONTS = {
-  "Cinzel-SemiBold": require("../../assets/fonts/Cinzel-SemiBold.ttf"),
-  "Cinzel-Bold": require("../../assets/fonts/Cinzel-Bold.ttf"),
-  "JetBrainsMono-Medium": require("../../assets/fonts/JetBrainsMono-Medium.ttf"),
+  "Fredoka-SemiBold": require("../../assets/fonts/Fredoka-SemiBold.ttf"),
+  "Fredoka-Bold": require("../../assets/fonts/Fredoka-Bold.ttf"),
+  "Nunito-SemiBold": require("../../assets/fonts/Nunito-SemiBold.ttf"),
+  "Nunito-Bold": require("../../assets/fonts/Nunito-Bold.ttf"),
+  "Nunito-ExtraBold": require("../../assets/fonts/Nunito-ExtraBold.ttf"),
 };
 
 // On the web, paint the page itself: otherwise Safari's overscroll bounce and anything past
@@ -38,7 +40,7 @@ export default function RootLayout() {
   if (!loaded && !fontError && !waited) {
     return (
       <View style={styles.boot}>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <Backdrop variant="full" />
       </View>
     );
@@ -47,7 +49,7 @@ export default function RootLayout() {
   return (
     <ConvexProvider client={convex}>
       <IdentityProvider>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
           <Stack.Screen name="g/[groupId]/invite" options={{ presentation: "modal" }} />
         </Stack>

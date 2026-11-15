@@ -1,11 +1,11 @@
 import { router } from "expo-router";
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet } from "react-native";
 import type { Id } from "@convex/_generated/dataModel";
 import { Banner } from "@/components/banner";
 import { GroupScreen } from "@/components/group-screen";
 import { PromptCard } from "@/components/prompt-card";
 import { TodayCard } from "@/components/today-card";
-import { Button, Card, Txt } from "@/components/ui";
+import { Button, Card, Mascot, Txt } from "@/components/ui";
 import { colors } from "@/theme";
 
 // Owned by the lead. The Today tab: what to do right now. News from the last reveal,
@@ -13,16 +13,20 @@ import { colors } from "@/theme";
 
 export function TodayTab({ groupId }: { groupId: Id<"groups"> }) {
   return (
-    <GroupScreen groupId={groupId}>
+    <GroupScreen groupId={groupId} place="today">
       {(today) => (
         <>
           <Banner groupId={groupId} />
           {today.group.phase === "finale" ? (
-            <Card tone="soft" testID="finale-teaser">
-              <Text style={styles.crown}>👑</Text>
-              <Txt variant="title">The full board is out</Txt>
-              <Txt color={colors.muted}>Week {today.group.week} is over. See who rules the roost, and where you landed.</Txt>
-              <Button label="See the pecking order" onPress={() => router.navigate(`/g/${groupId}/board`)} />
+            <Card tone="soft" testID="finale-teaser" style={styles.center}>
+              <Mascot mood="cheering" size={112} />
+              <Txt variant="title" align="center">
+                The winner is out!
+              </Txt>
+              <Txt color={colors.muted} align="center">
+                Week {today.group.week} is over. See who won, and where you landed.
+              </Txt>
+              <Button label="Show me the board" onPress={() => router.navigate(`/g/${groupId}/board`)} />
             </Card>
           ) : (
             <>
@@ -37,5 +41,5 @@ export function TodayTab({ groupId }: { groupId: Id<"groups"> }) {
 }
 
 const styles = StyleSheet.create({
-  crown: { fontSize: 36 },
+  center: { alignItems: "stretch" },
 });

@@ -11,15 +11,15 @@ export function Field({ label, style, onFocus, onBlur, ...rest }: Props) {
   return (
     <View style={styles.wrap}>
       {label ? (
-        <Txt variant="caption" color={colors.muted}>
+        <Txt variant="label" color={colors.ink}>
           {label}
         </Txt>
       ) : null}
       <TextInput
-        placeholderTextColor="#768090"
-        selectionColor={colors.primary}
-        cursorColor={colors.primary}
-        keyboardAppearance="dark"
+        placeholderTextColor={colors.placeholder}
+        selectionColor={colors.accent}
+        cursorColor={colors.accent}
+        keyboardAppearance="light"
         {...rest}
         onFocus={(e) => {
           setFocused(true);
@@ -41,17 +41,16 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.ink,
     backgroundColor: colors.sunken,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.10)",
+    borderWidth: 2,
+    borderColor: colors.border,
     borderRadius: radius.field,
     paddingHorizontal: space(4),
     paddingVertical: space(3),
-    minHeight: 52,
-    boxShadow: "inset 0px 2px 4px rgba(0, 0, 0, 0.5)",
-    // The brass border is the focus ring; drop the browser's default blue one on the web.
+    minHeight: 58,
+    // The coloured border is the focus ring; drop the browser's default blue one on the web.
     outlineStyle: "solid",
     outlineWidth: 0,
   },
-  focused: { borderColor: "rgba(212, 175, 55, 0.7)" },
-  multiline: { minHeight: 92, textAlignVertical: "top" },
+  focused: { borderColor: colors.accent, backgroundColor: colors.surface },
+  multiline: { minHeight: 100, textAlignVertical: "top" },
 });

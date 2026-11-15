@@ -21,7 +21,7 @@ export function BoardTab({ groupId }: { groupId: Id<"groups"> }) {
   ) : null;
 
   return (
-    <GroupScreen groupId={groupId}>
+    <GroupScreen groupId={groupId} place="board">
       {(today) =>
         today.group.phase === "finale" ? (
           <Finale groupId={groupId} />

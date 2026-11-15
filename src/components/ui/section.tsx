@@ -21,7 +21,7 @@ export function Section({ title, aside, footnote, children, testID }: Props) {
       {title || aside ? (
         <View style={styles.head}>
           {title ? (
-            <Txt variant="overline" color={colors.muted} accessibilityRole="header" style={styles.title}>
+            <Txt variant="overline" color={colors.ink} accessibilityRole="header" style={styles.title}>
               {title}
             </Txt>
           ) : null}

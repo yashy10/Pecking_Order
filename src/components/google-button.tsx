@@ -3,9 +3,9 @@ import Svg, { Path } from "react-native-svg";
 import { motion, radius, space } from "@/theme";
 import { tap } from "@/utils/haptics";
 
-// Google's own "Continue with Google" button (dark theme), per Google's sign-in branding
+// Google's own "Continue with Google" button (light theme), per Google's sign-in branding
 // guidelines. Its colours are Google's, not the app's, and must not be restyled.
-const G = { fill: "#131314", stroke: "#8E918F", text: "#E3E3E3" };
+const G = { fill: "#FFFFFF", stroke: "#747775", text: "#1F1F1F" };
 
 type Props = { onPress: () => void; loading?: boolean; disabled?: boolean };
 
@@ -59,7 +59,7 @@ export function GoogleButton({ onPress, loading, disabled }: Props) {
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 52,
+    minHeight: 58,
     borderRadius: radius.field,
     borderWidth: 1,
     borderColor: G.stroke,

@@ -15,7 +15,7 @@ import { clockTime, eveningName, shortDuration, splitDuration, weekdayName } fro
 const DAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function CountdownTab({ groupId }: { groupId: Id<"groups"> }) {
-  return <GroupScreen groupId={groupId}>{(today) => <Countdown groupId={groupId} today={today} />}</GroupScreen>;
+  return <GroupScreen groupId={groupId} place="sunday">{(today) => <Countdown groupId={groupId} today={today} />}</GroupScreen>;
 }
 
 function Countdown({ groupId, today }: { groupId: Id<"groups">; today: Today }) {

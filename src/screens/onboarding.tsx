@@ -18,9 +18,9 @@ import {
 import { api } from "@convex/_generated/api";
 import { GoogleButton } from "@/components/google-button";
 import { ProfileForm } from "@/components/profile-form";
-import { Button, Ornament, Screen, Skeleton, Txt } from "@/components/ui";
+import { Button, Mascot, Screen, Skeleton, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, fonts, glass, radius, space } from "@/theme";
+import { colors, fonts, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
 import { getItem, setItem } from "@/utils/storage";
 
@@ -32,19 +32,19 @@ const VERIFIER_KEY = "po_google_verifier";
 
 const SLIDES = [
   {
-    emoji: "🎲",
+    mood: "hello",
     title: "One game a day",
-    body: "A quick game drops every day for your friend group. Play it whenever you like.",
+    body: "Every day there's one quick game to play with your friends. It takes about a minute.",
   },
   {
-    emoji: "🔒",
-    title: "Scores stay sealed",
-    body: "Points are hidden all week. Nobody knows who's winning until the Sunday reveal.",
+    mood: "peeking",
+    title: "Scores are a secret",
+    body: "Nobody can see who's winning. Not even you! Everyone finds out on Sunday.",
   },
   {
-    emoji: "🐔",
-    title: "Take your seat",
-    body: "Host a table for your friends or join theirs with a code. Your seat follows your Google account to any device.",
+    mood: "cheering",
+    title: "Play with your friends",
+    body: "Start a group or join one with a code. Sign in so your spot is saved on any phone.",
   },
 ] as const;
 
@@ -143,20 +143,17 @@ export function Onboarding() {
 
   if (me?.signedIn && me.needsProfile) {
     return (
-      <Screen backdrop="full" fill>
+      <Screen backdrop="full" place="home" fill>
         <View style={styles.welcome}>
-          <Txt variant="overline" color={colors.accent} align="center">
-            You're in
-          </Txt>
+          <Mascot mood="cheering" size={96} />
           <Txt variant="display" align="center">
-            Welcome, {me.name}
+            Hi, {me.name}!
           </Txt>
-          <Ornament />
         </View>
         <View style={styles.zone}>
           <ProfileForm
-            title="Pick your bird"
-            cta="Take a seat"
+            title="Pick your look"
+            cta="Let's play"
             initialName={me.name}
             onSaved={() => router.replace(next)}
           />
@@ -166,12 +163,11 @@ export function Onboarding() {
   }
 
   return (
-    <Screen backdrop="full" fill>
+    <Screen backdrop="full" place="home" fill>
       <View style={styles.brand}>
         <Text style={styles.wordmark} accessibilityRole="header">
-          PECKING ORDER
+          Pecking Order
         </Text>
-        <Ornament />
       </View>
       {!token || me === undefined ? (
         <View style={styles.zone}>
@@ -217,9 +213,7 @@ function Intro({ busy, error, onGoogle }: { busy: boolean; error: string | null;
           {SLIDES.map((s) => (
             <View key={s.title} style={[styles.slideWrap, { width: width || 1 }]}>
               <View style={styles.slide}>
-                <Text style={styles.slideEmoji} accessibilityElementsHidden importantForAccessibility="no">
-                  {s.emoji}
-                </Text>
+                <Mascot mood={s.mood} size={128} />
                 <Txt variant="title" align="center">
                   {s.title}
                 </Txt>
@@ -253,7 +247,7 @@ function Intro({ busy, error, onGoogle }: { busy: boolean; error: string | null;
         <View style={styles.actions}>
           <GoogleButton onPress={onGoogle} loading={busy} />
           <Txt variant="caption" color={colors.muted} align="center">
-            We use your Google first name and account ID, nothing else. Your friends only see the name and bird you pick.
+            We only use your first name from Google. Your friends see the name and animal you pick.
           </Txt>
         </View>
       )}
@@ -262,31 +256,14 @@ function Intro({ busy, error, onGoogle }: { busy: boolean; error: string | null;
 }
 
 const styles = StyleSheet.create({
-  brand: { flex: 1, alignItems: "center", justifyContent: "center", gap: space(3), paddingTop: space(6) },
-  wordmark: {
-    fontFamily: fonts.display,
-    fontSize: 26,
-    lineHeight: 34,
-    letterSpacing: 4,
-    color: colors.accent,
-    textAlign: "center",
-  },
-  welcome: { flex: 1, alignItems: "center", justifyContent: "center", gap: space(3), paddingTop: space(6) },
-  zone: { gap: space(4), paddingBottom: space(4) },
+  brand: { alignItems: "center", paddingTop: space(4) },
+  wordmark: { fontFamily: fonts.display, fontSize: 30, lineHeight: 36, color: colors.ink, textAlign: "center" },
+  welcome: { flex: 1, alignItems: "center", justifyContent: "center", gap: space(2), paddingTop: space(6) },
+  zone: { flexGrow: 1, justifyContent: "flex-end", gap: space(4), paddingBottom: space(4) },
   slideWrap: { paddingHorizontal: space(1) },
-  slide: {
-    alignItems: "center",
-    gap: space(3),
-    paddingVertical: space(8),
-    paddingHorizontal: space(5),
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: glass.panel,
-  },
-  slideEmoji: { fontSize: 48, lineHeight: 60 },
+  slide: { alignItems: "center", gap: space(3), paddingVertical: space(6), paddingHorizontal: space(4) },
   dots: { flexDirection: "row", justifyContent: "center", gap: space(2) },
-  dot: { width: 8, height: 8, borderRadius: radius.pill, backgroundColor: colors.fog },
-  dotOn: { width: 22, backgroundColor: colors.primary },
+  dot: { width: 10, height: 10, borderRadius: radius.pill, backgroundColor: colors.border },
+  dotOn: { width: 28, backgroundColor: colors.ink },
   actions: { gap: space(2) },
 });

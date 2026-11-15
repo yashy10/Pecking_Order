@@ -42,9 +42,9 @@ export function PromptCard({ today }: { today: Today }) {
     <Card testID="prompt-card">
       <View style={styles.titleRow}>
         <Txt variant="overline" color={colors.muted} style={styles.grow}>
-          Today's question
+          Question of the day
         </Txt>
-        <Pill label="+10 at the reveal" tone="soft" />
+        <Pill label="+10 points" tone="primary" />
       </View>
       <Txt variant="title">{prompt.question}</Txt>
       {editing ? (
@@ -53,18 +53,18 @@ export function PromptCard({ today }: { today: Today }) {
             testID="prompt-field"
             value={value}
             onChangeText={setDraft}
-            placeholder="Keep it short and funny"
+            placeholder="Short and funny is best"
             accessibilityLabel="Your answer"
             maxLength={140}
             multiline
           />
           <View style={styles.footer}>
             <Txt variant="caption" color={colors.muted} tabular style={styles.grow}>
-              {value.length}/140 · Friends guess who wrote it tomorrow
+              {value.length}/140 · Tomorrow your friends guess who wrote it
             </Txt>
           </View>
           {error ? <Txt color={colors.bad}>{error}</Txt> : null}
-          <Button label="Save answer" onPress={submit} loading={busy} disabled={!value.trim()} />
+          <Button label="Save my answer" onPress={submit} loading={busy} disabled={!value.trim()} />
         </>
       ) : (
         <>
@@ -74,7 +74,7 @@ export function PromptCard({ today }: { today: Today }) {
           <View style={styles.footer}>
             <Icon name="check" size={16} color={colors.good} />
             <Txt variant="caption" color={colors.muted} style={styles.grow}>
-              Saved for tomorrow's game
+              Saved for tomorrow's game!
             </Txt>
             <Button
               label="Edit"

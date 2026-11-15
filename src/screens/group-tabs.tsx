@@ -46,16 +46,16 @@ export function GroupTabs({ groupId }: { groupId: Id<"groups"> }) {
           ])}
         >
           <TabTrigger name="index" href={base} asChild>
-            <TabButton icon="today" label="Today" dot={toPlay} testID="tab-today" />
+            <TabButton icon="today" label="Today" place="today" dot={toPlay} testID="tab-today" />
           </TabTrigger>
           <TabTrigger name="board" href={`${base}/board`} asChild>
-            <TabButton icon="board" label="Board" dot={finale} testID="tab-board" />
+            <TabButton icon="board" label="Board" place="board" dot={finale} testID="tab-board" />
           </TabTrigger>
           <TabTrigger name="sunday" href={`${base}/sunday`} asChild>
-            <TabButton icon="hourglass" label="Sunday" testID="tab-sunday" />
+            <TabButton icon="hourglass" label="Sunday" place="sunday" testID="tab-sunday" />
           </TabTrigger>
           <TabTrigger name="crew" href={`${base}/crew`} asChild>
-            <TabButton icon="crew" label="Crew" testID="tab-crew" />
+            <TabButton icon="crew" label="Friends" place="crew" testID="tab-crew" />
           </TabTrigger>
         </View>
       </TabList>
@@ -68,8 +68,8 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
     minHeight: layout.tabBarHeight,
-    backgroundColor: "rgba(8, 9, 12, 0.97)",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(212, 175, 55, 0.14)",
+    backgroundColor: colors.surface,
+    borderTopWidth: 2,
+    borderTopColor: colors.border,
   },
 });
