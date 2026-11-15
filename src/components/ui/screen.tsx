@@ -14,17 +14,19 @@ type Props = {
   back?: boolean;
   right?: ReactNode;
   scroll?: boolean;
+  wide?: boolean; // the demo panel on a projector; every player screen stays narrow
 };
 
-export function Screen({ children, title, back, right, scroll = true }: Props) {
+export function Screen({ children, title, back, right, scroll = true, wide }: Props) {
   const insets = useSafeAreaInsets();
   const showHeader = Boolean(title || back || right);
-  const column = <View style={styles.column}>{children}</View>;
+  const width = wide ? styles.wide : null;
+  const column = <View style={[styles.column, width]}>{children}</View>;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       {showHeader ? (
-        <View style={styles.header}>
+        <View style={[styles.header, width]}>
           {back ? (
             <Pressable
               accessibilityRole="button"
@@ -79,4 +81,5 @@ const styles = StyleSheet.create({
   title: { flex: 1 },
   scroll: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingBottom: space(8) },
   column: { width: "100%", maxWidth: layout.maxWidth, alignSelf: "center", gap: space(4) },
+  wide: { maxWidth: 1040 },
 });

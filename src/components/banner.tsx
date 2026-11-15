@@ -1,9 +1,101 @@
+import { useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
+import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { Txt } from "@/components/ui";
+import { useToken } from "@/hooks/use-identity";
+import { colors, radius, space } from "@/theme";
+import * as haptics from "@/utils/haptics";
+import { getItem, setItem } from "@/utils/storage";
 
-// Owned by the lead. Phase 2 (PLAN §10, step 1): shows the newest unseen line from
-// api.events.mine, like "Priya just passed you". Renders nothing until then.
+// Owned by the lead (PLAN §10, step 1). The lines written at each reveal, like
+// "Priya just passed you". Relative only: never a rank. Shows what you haven't
+// seen yet; tap to dismiss. Works the same on phones and the web.
+
+type Event = FunctionReturnType<typeof api.events.mine>[number];
+
+const ICON: Record<Event["kind"], string> = {
+  passedYou: "😤",
+  youPassed: "🚀",
+  power: "✨",
+  squawk: "🗯️",
+  champion: "👑",
+};
+
+const MAX_SHOWN = 3;
 
 export function Banner({ groupId }: { groupId: Id<"groups"> }) {
-  void groupId;
-  return null;
+  const token = useToken();
+  const events = useQuery(api.events.mine, token ? { token, groupId } : "skip");
+  const storeKey = `po_seen_${groupId}`;
+  const [seen, setSeen] = useState<string | null | undefined>(undefined); // undefined while loading
+
+  useEffect(() => {
+    let cancelled = false;
+    getItem(storeKey).then((value) => {
+      if (!cancelled) setSeen(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [storeKey]);
+
+  const unseen = unseenEvents(events, seen);
+  const newestId = unseen[0]?.eventId;
+  const newestKind = unseen[0]?.kind;
+
+  useEffect(() => {
+    if (!newestId) return;
+    if (newestKind === "passedYou") haptics.warning();
+    else haptics.success();
+  }, [newestId, newestKind]);
+
+  if (unseen.length === 0 || !events) return null;
+
+  function dismiss() {
+    const latest = events?.[0]?.eventId;
+    if (!latest) return;
+    setSeen(latest);
+    void setItem(storeKey, latest);
+  }
+
+  return (
+    <Animated.View entering={FadeInDown.springify()} exiting={FadeOut} key={newestId}>
+      <Pressable accessibilityRole="button" accessibilityHint="Dismiss" onPress={dismiss} testID="banner">
+        <View style={styles.card}>
+          {unseen.map((e) => (
+            <View key={e.eventId} style={styles.row}>
+              <Text style={styles.icon}>{ICON[e.kind]}</Text>
+              <Txt style={styles.text}>{e.text}</Txt>
+            </View>
+          ))}
+          <Txt variant="caption" color={colors.muted}>
+            Tap to dismiss
+          </Txt>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
 }
+
+/** Newest first, up to the last one this device dismissed. */
+function unseenEvents(events: Event[] | undefined, seen: string | null | undefined): Event[] {
+  if (!events || seen === undefined) return [];
+  const cut = seen ? events.findIndex((e) => e.eventId === seen) : -1;
+  return (cut === -1 ? events : events.slice(0, cut)).slice(0, MAX_SHOWN);
+}
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.ink,
+    borderRadius: radius.card,
+    padding: space(4),
+    gap: space(2),
+  },
+  row: { flexDirection: "row", alignItems: "center", gap: space(3) },
+  icon: { fontSize: 22 },
+  text: { flex: 1, color: colors.surface, fontWeight: "800" },
+});
