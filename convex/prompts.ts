@@ -57,7 +57,7 @@ export const answer = mutation({
   },
 });
 
-/** For the AI rewrite. Never exposed to clients. */
+/** For the AI rewrite: the answers that don't have a rewrite yet. Never exposed to clients. */
 export const answersForPrompt = internalQuery({
   args: { promptId: v.id("prompts") },
   returns: v.array(v.object({ answerId: v.id("answers"), text: v.string() })),
@@ -66,7 +66,7 @@ export const answersForPrompt = internalQuery({
       .query("answers")
       .withIndex("by_promptId", (q) => q.eq("promptId", promptId))
       .take(MAX_MEMBERS);
-    return answers.map((a) => ({ answerId: a._id, text: a.text }));
+    return answers.filter((a) => !a.rewritten).map((a) => ({ answerId: a._id, text: a.text }));
   },
 });
 

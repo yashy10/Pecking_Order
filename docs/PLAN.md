@@ -592,6 +592,8 @@ Each track gets the prompt in Appendix B with its letter filled in. Each opens o
 
 ### Track C — prompts, Who Said It, AI rewrite
 
+**Done by the lead at 1:20. Do not start a Capy task for Track C.** Checked on the cloud backend, including a real OpenAI rewrite with `gpt-5.4-mini`.
+
 **Owns:** `convex/prompts.ts`, `convex/whoSaidIt.ts`, `convex/ai.ts`, `src/components/prompt-card.tsx`, `src/screens/who-said-it-game.tsx`.
 
 **Build:**
