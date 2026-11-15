@@ -12,6 +12,7 @@ import type * as ai from "../ai.js";
 import type * as blur from "../blur.js";
 import type * as clock from "../clock.js";
 import type * as content_blur from "../content/blur.js";
+import type * as content_bots from "../content/bots.js";
 import type * as content_prompts from "../content/prompts.js";
 import type * as demo from "../demo.js";
 import type * as events from "../events.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   blur: typeof blur;
   clock: typeof clock;
   "content/blur": typeof content_blur;
+  "content/bots": typeof content_bots;
   "content/prompts": typeof content_prompts;
   demo: typeof demo;
   events: typeof events;
