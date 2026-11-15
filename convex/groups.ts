@@ -5,6 +5,7 @@ import { findUser, requireUser } from "./lib/auth";
 import { dayLabel, GROUP_NAME_MAX_CHARS } from "./lib/constants";
 import { membersOf, newMemberDoc } from "./lib/day";
 import { MAX_OFFSET_MINUTES, MIN_OFFSET_MINUTES, nextTickAt, startingPoint } from "./lib/schedule";
+import { scheduleReminders } from "./notifications";
 import { phaseV } from "./schema";
 
 // Owned by Track A. Phase 0: working version.
@@ -87,6 +88,8 @@ export const create = mutation({
     });
     await ctx.db.insert("members", newMemberDoc(groupId, profile));
     await startDay(ctx, groupId, 1, start.day);
+    const created = await ctx.db.get("groups", groupId);
+    if (created) await scheduleReminders(ctx, created); // the first day's nudges
     return { groupId, inviteCode };
   },
 });
