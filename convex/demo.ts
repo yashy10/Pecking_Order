@@ -1,10 +1,12 @@
 import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { advanceGroup, revealDay, runFinale, startDay, startNewWeek } from "./clock";
 import { BANKED_POINTS, BOTS, cannedAnswers, WEDNESDAY_POINTS } from "./content/bots";
+import { profileById } from "./lib/auth";
 import { dayLabel, LAST_GAME_DAY, MAX_MEMBERS, WILDCARD_DAY } from "./lib/constants";
 import { activePowers, byStanding, gameFor, membersOf, newMemberDoc, promptFor } from "./lib/day";
+import { finishPlay } from "./lib/scoring";
 import { gameTypeV, phaseV, powerTypeV } from "./schema";
 
 // Owned by the lead. Demo controls (PLAN §9). Every function needs DEMO_KEY,
@@ -393,5 +395,94 @@ export const resetWeek = mutation({
     await takeManualControl(ctx, groupId);
     await startNewWeek(ctx, await loadGroup(ctx, groupId));
     return null;
+  },
+});
+
+// ---------------------------------------------------------------------------------------
+// A finished week, for seeing the whole app end to end without running the demo.
+
+/** Base points per day, Monday to Saturday, before Wednesday's ×2. Odd days are Who Said It. */
+type Script = readonly number[];
+
+const YOUR_WEEK: Script = [72, 75, 74, 100, 78, 75];
+
+/** Seven bots, scripted for a close race: Priya leads all week and you pass her on Saturday. */
+const FINISHED_CAST: { name: string; emoji: string; hasPass: boolean; week: Script; skipsQuestion: number[] }[] = [
+  { name: "Priya", emoji: "🦊", hasPass: true, week: [88, 50, 84, 75, 80, 25], skipsQuestion: [] },
+  { name: "Sam", emoji: "🐸", hasPass: false, week: [45, 25, 77, 50, 0, 75], skipsQuestion: [] },
+  { name: "Jordan", emoji: "🐼", hasPass: false, week: [63, 75, 40, 50, 71, 50], skipsQuestion: [] },
+  { name: "Maya", emoji: "🦉", hasPass: false, week: [58, 50, 61, 25, 54, 100], skipsQuestion: [] },
+  { name: "Leo", emoji: "🦁", hasPass: false, week: [0, 100, 55, 50, 62, 25], skipsQuestion: [0] },
+  { name: "Ava", emoji: "🐧", hasPass: false, week: [39, 25, 0, 75, 47, 50], skipsQuestion: [3] },
+  { name: "Noah", emoji: "🐯", hasPass: false, week: [52, 0, 49, 25, 35, 50], skipsQuestion: [1, 4] },
+];
+
+/**
+ * For the developer, from the CLI: a group whose whole week has been played, ending on
+ * Sunday's finale. One real player (`userId`) plus seven bots on the scripts above. Every
+ * day goes through the real clock: the games, the reveals, streaks, earned powers, the
+ * "passed you" lines and the finale. The bots' answers are stored pre-rewritten, so it
+ * makes no OpenAI calls. The real player's scores are simulated; they answer no questions,
+ * so nothing is ever quoted as theirs.
+ *   npx convex run demo:buildFinishedWeek '{"name":"finished_game","userId":"…"}'
+ */
+export const buildFinishedWeek = internalMutation({
+  args: { name: v.string(), userId: v.id("users") },
+  returns: v.object({ groupId: v.id("groups"), inviteCode: v.string() }),
+  handler: async (ctx, { name, userId }) => {
+    const you = await profileById(ctx, userId);
+    if (!you) throw new ConvexError("No such user.");
+    const week = 1;
+    const inviteCode = await uniqueInviteCode(ctx);
+    const groupId = await ctx.db.insert("groups", {
+      name,
+      inviteCode,
+      week,
+      day: 0,
+      phase: "open",
+      autoClock: false,
+    });
+    await startDay(ctx, groupId, week, 0);
+
+    const cast: { memberId: Id<"members">; week: Script; answers: boolean; skipsQuestion: number[] }[] = [
+      { memberId: await ctx.db.insert("members", newMemberDoc(groupId, you)), week: YOUR_WEEK, answers: false, skipsQuestion: [] },
+    ];
+    for (const bot of FINISHED_CAST) {
+      const profile = { name: bot.name, emoji: bot.emoji, isBot: true, hasPass: bot.hasPass };
+      const botUserId = await ctx.db.insert("users", { ...profile, token: `bot_${randomHex(60)}` });
+      const memberId = await ctx.db.insert("members", newMemberDoc(groupId, { ...profile, userId: botUserId }));
+      cast.push({ memberId, week: bot.week, answers: true, skipsQuestion: bot.skipsQuestion });
+    }
+
+    for (let day = 0; day <= LAST_GAME_DAY; day++) {
+      const game = await gameFor(ctx, groupId, week, day);
+      const prompt = await promptFor(ctx, groupId, week, day);
+      const lines = shuffle(cannedAnswers(prompt?.question));
+      for (const [i, player] of cast.entries()) {
+        const base = player.week[day];
+        if (game) {
+          const now = Date.now();
+          const playId = await ctx.db.insert("plays", {
+            gameId: game._id,
+            groupId,
+            memberId: player.memberId,
+            startedAt: now,
+            wrongGuesses: 0,
+          });
+          const play = await ctx.db.get("plays", playId);
+          const detail =
+            game.type === "whoSaidIt" ? `${Math.round(base / 25)} of 4` : base > 0 ? "Correct" : "Out of time";
+          if (play) await finishPlay(ctx, play, { basePoints: base, detail });
+        }
+        if (prompt && player.answers && !player.skipsQuestion.includes(day)) {
+          const text = lines[i % lines.length];
+          await ctx.db.insert("answers", { promptId: prompt._id, groupId, memberId: player.memberId, text, rewritten: text });
+        }
+      }
+      await advanceGroup(ctx, groupId); // 9 PM: the reveal
+      await advanceGroup(ctx, groupId); // midnight: the next day opens (Sunday has no game)
+    }
+    await advanceGroup(ctx, groupId); // Sunday 9 PM: the finale
+    return { groupId, inviteCode };
   },
 });

@@ -33,6 +33,19 @@ export async function findUser(ctx: Ctx, token: string): Promise<Profile | null>
   };
 }
 
+/** For internal developer tools only, never a public function: a user's Profile by id. */
+export async function profileById(ctx: Ctx, userId: Id<"users">): Promise<Profile | null> {
+  const user = await ctx.db.get("users", userId);
+  if (!user) return null;
+  return {
+    userId: user._id,
+    name: user.name,
+    emoji: user.emoji,
+    isBot: user.isBot,
+    hasPass: user.hasPass,
+  };
+}
+
 export async function requireUser(ctx: Ctx, token: string): Promise<Profile> {
   const user = await findUser(ctx, token);
   if (!user) throw new ConvexError("Set your name first.");

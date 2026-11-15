@@ -42,9 +42,11 @@ function Countdown({ groupId, today }: { groupId: Id<"groups">; today: Today }) 
         <NextUp at={group.nextTickAt} now={now} revealing={group.phase === "open"} />
       ) : null}
 
-      <Txt variant="caption" color={colors.muted} align="center">
-        Until the finale, nobody sees the whole board, only the rivals right next to them.
-      </Txt>
+      {finale ? null : (
+        <Txt variant="caption" color={colors.muted} align="center">
+          Until the finale, nobody sees the whole board, only the rivals right next to them.
+        </Txt>
+      )}
     </>
   );
 }
