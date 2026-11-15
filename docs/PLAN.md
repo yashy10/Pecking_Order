@@ -495,7 +495,9 @@ Expo builds both from the same code, so nothing in the stack changes. What it ta
 
 **Goal:** an app that runs end to end with placeholder bodies, at a public URL and on the iPhone, with every file from §6.5 in place.
 
-**Status at 12:15:** built and verified locally. A 29-check script ran a full week through the backend (join, play, seal, reveal, Wildcard Wednesday, finale, week 2), `npm run check` passes, the web bundle builds, and two browser profiles played and joined through the real UI. Waiting on three things only you can do: the Convex login (for a cloud backend the phones can reach), the Expo login with the right account (for the public web URL and the Android build), and the go-ahead to push to GitHub (for Capy). Use Node 24 for this project: `export PATH=/opt/homebrew/opt/node@24/bin:$PATH`.
+**Status at 12:15:** built and verified locally. A 29-check script ran a full week through the backend (join, play, seal, reveal, Wildcard Wednesday, finale, week 2), `npm run check` passes, the web bundle builds, and two browser profiles played and joined through the real UI. Use Node 24 for this project: `export PATH=/opt/homebrew/opt/node@24/bin:$PATH`.
+
+**Status at 12:30:** cloud setup done. Backend: Convex dev deployment `bold-pony-982` (team `yash-sanghvi`), which passed the same 29 checks. Web: https://pecking-order.expo.app, verified with two players, the join link and a full Blur round. Expo project: `@yashy10/Pecking_order`. Phones: Expo Go over a public tunnel; the manifests, the signed manifest and both bundles all return 200. Remaining for Gate 1: you scan the QR on both phones, and Capy starts tracks A to D.
 
 ```bash
 # A. Already done at 11:35: the app is scaffolded at the repo root as "Pecking Order"
