@@ -57,14 +57,14 @@ export function Screen({ children, title, subtitle, back, backTo = "/", right, s
       <KeyboardAvoidingView behavior="padding" style={styles.flex}>
         {scroll ? (
           <ScrollView
-            contentContainerStyle={[styles.scroll, tabbed && styles.scrollTabbed]}
+            contentContainerStyle={[styles.scroll, !showHeader && styles.scrollBare, tabbed && styles.scrollTabbed]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
           >
             {column}
           </ScrollView>
         ) : (
-          <View style={[styles.flex, styles.scroll]}>{column}</View>
+          <View style={[styles.flex, styles.scroll, !showHeader && styles.scrollBare]}>{column}</View>
         )}
       </KeyboardAvoidingView>
     </View>
@@ -90,6 +90,7 @@ const styles = StyleSheet.create({
   titles: { flex: 1, gap: 1 },
   right: { flexDirection: "row", alignItems: "center", gap: space(1), marginRight: -space(2) },
   scroll: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingTop: space(1), paddingBottom: space(8) },
+  scrollBare: { paddingTop: space(5) }, // no header above: give the first block room to breathe
   scrollTabbed: { paddingBottom: space(6) },
   column: { width: "100%", maxWidth: layout.maxWidth, alignSelf: "center", gap: space(5) },
   wide: { maxWidth: 1040 },

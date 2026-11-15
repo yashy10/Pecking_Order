@@ -12,9 +12,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { Button, Card, Field, Loading, Screen, Txt } from "@/components/ui";
+import { Button, Card, EmptyState, Field, Icon, Loading, Pill, Screen, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, radius } from "@/theme";
+import { colors, radius, space } from "@/theme";
 import { BLUR_IMAGE_SOURCES } from "@/utils/blur-images";
 import { errorMessage } from "@/utils/errors";
 import * as haptics from "@/utils/haptics";
@@ -106,18 +106,17 @@ export function BlurGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: I
 
   if (error && !round) {
     return (
-      <Screen back title="Blur">
-        <Card>
-          <Txt>{error}</Txt>
-        </Card>
-        <Button label="Back to the group" onPress={leave} />
+      <Screen back title="Blur" backTo={`/g/${groupId}`}>
+        <EmptyState emoji="😵" title="Couldn't start the round" body={error}>
+          <Button label="Back to the group" onPress={leave} />
+        </EmptyState>
       </Screen>
     );
   }
 
   if (!round) {
     return (
-      <Screen back title="Blur">
+      <Screen back title="Blur" backTo={`/g/${groupId}`}>
         <Loading label="Blurring today's photo…" />
       </Screen>
     );
@@ -125,62 +124,108 @@ export function BlurGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: I
 
   const blurRadius = result ? 0 : Math.max(0, BLUR_START * (1 - elapsed / round.roundMs));
   const livePoints = Math.max(10, 100 - Math.floor(elapsed / 200) - 5 * wrong);
+  const timeLeft = result ? 0 : Math.max(0, 1 - elapsed / round.hardStopMs);
   const source = BLUR_IMAGE_SOURCES[round.imageKey];
 
   return (
-    <Screen back title="Blur">
+    <Screen
+      back
+      title="Blur"
+      subtitle={result ? "Round over" : "Guess before it sharpens"}
+      backTo={`/g/${groupId}`}
+    >
       <View style={styles.photoWrap}>
-        {source ? (
-          <Image
-            source={source}
-            blurRadius={blurRadius}
-            style={styles.photo}
-            contentFit="cover"
-            transition={0}
-          />
-        ) : (
-          <View style={[styles.photo, styles.missing]} />
-        )}
+        <View style={styles.photoFrame}>
+          {source ? (
+            <Image
+              source={source}
+              blurRadius={blurRadius}
+              style={styles.photo}
+              contentFit="cover"
+              transition={0}
+              accessibilityLabel={result ? `Photo of ${result.answer}` : "A blurred photo"}
+            />
+          ) : (
+            <View style={[styles.photo, styles.missing]} />
+          )}
+          {!result ? (
+            <View style={styles.pointsChip} accessibilityLiveRegion="polite" accessibilityLabel={`${livePoints} points available`}>
+              <Txt variant="heading" tabular color={colors.surface}>
+                {livePoints}
+              </Txt>
+              <Txt variant="caption" color={colors.fog}>
+                pts
+              </Txt>
+            </View>
+          ) : null}
+        </View>
+        {!result ? (
+          <View style={styles.track} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <View style={[styles.fill, { width: `${timeLeft * 100}%` }]} />
+          </View>
+        ) : null}
       </View>
 
       {result ? (
-        <Card testID="blur-result">
-          <Txt variant="caption" color={colors.muted}>
-            {result.correct ? "YOU GOT IT. IT WAS" : "IT WAS"}
+        <Card testID="blur-result" style={styles.result}>
+          <Txt variant="overline" color={result.correct ? colors.good : colors.muted}>
+            {result.correct ? "You got it. It was" : "Out of time. It was"}
           </Txt>
-          <Txt variant="display">{result.answer}</Txt>
-          <Txt variant="title">🔒 {result.points} points sealed</Txt>
-          <Txt color={colors.muted}>Nobody sees scores until tonight's reveal.</Txt>
-          <Button testID="back-to-group" label="Back to the group" onPress={leave} />
+          <Txt variant="display" align="center">
+            {result.answer}
+          </Txt>
+          <View style={styles.sealed}>
+            <Icon name="lock" size={18} color={colors.primary} />
+            <Txt variant="heading" tabular>
+              {result.points} points sealed
+            </Txt>
+          </View>
+          <Txt color={colors.muted} align="center">
+            Nobody sees scores until tonight's reveal.
+          </Txt>
+          <View style={styles.stretch}>
+            <Button testID="back-to-group" label="Back to the group" onPress={leave} />
+          </View>
         </Card>
       ) : (
         <>
-          <Txt variant="title" align="center">
-            {livePoints} points
-          </Txt>
-          <Animated.View style={shakeStyle}>
-            <Field
-              testID="guess-field"
-              value={text}
-              onChangeText={setText}
-              placeholder="What is it?"
-              autoFocus
-              autoCapitalize="none"
-              autoCorrect={false}
-              maxLength={60}
-              returnKeyType="go"
-              onSubmitEditing={() => text.trim() && submit(text)}
+          <Animated.View style={[styles.guessRow, shakeStyle]}>
+            <View style={styles.grow}>
+              <Field
+                testID="guess-field"
+                value={text}
+                onChangeText={setText}
+                placeholder="What is it?"
+                accessibilityLabel="Your guess"
+                autoFocus
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={60}
+                returnKeyType="go"
+                onSubmitEditing={() => text.trim() && submit(text)}
+              />
+            </View>
+            <Button
+              testID="guess-button"
+              label="Guess"
+              onPress={() => submit(text)}
+              loading={busy}
+              disabled={!text.trim()}
             />
           </Animated.View>
-          {wrong > 0 ? <Txt color={colors.bad}>Not quite. Each wrong guess costs 5.</Txt> : null}
+          {wrong > 0 ? (
+            <View style={styles.wrongRow}>
+              <Pill label={`−${5 * wrong}`} tone="badSoft" />
+              <Txt variant="caption" color={colors.bad} style={styles.grow}>
+                Not quite. Each wrong guess costs 5.
+              </Txt>
+            </View>
+          ) : (
+            <Txt variant="caption" color={colors.muted} align="center">
+              One word is usually enough. Typos are forgiven.
+            </Txt>
+          )}
           {error ? <Txt color={colors.bad}>{error}</Txt> : null}
-          <Button
-            testID="guess-button"
-            label="Guess"
-            onPress={() => submit(text)}
-            loading={busy}
-            disabled={!text.trim()}
-          />
         </>
       )}
     </Screen>
@@ -188,7 +233,44 @@ export function BlurGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: I
 }
 
 const styles = StyleSheet.create({
-  photoWrap: { alignItems: "center" },
-  photo: { width: "100%", maxWidth: 360, aspectRatio: 1, borderRadius: radius.card },
+  photoWrap: { alignItems: "center", gap: space(2) },
+  // Clip the blur to the square: a blurred photo bleeds into the cream background otherwise.
+  photoFrame: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: radius.card,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  photo: { width: "100%", aspectRatio: 1 },
   missing: { backgroundColor: colors.fog },
+  pointsChip: {
+    position: "absolute",
+    top: space(3),
+    left: space(3),
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
+    paddingHorizontal: space(3),
+    paddingVertical: space(1),
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(31, 20, 16, 0.72)",
+  },
+  track: {
+    width: "100%",
+    maxWidth: 400,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.sunken,
+    overflow: "hidden",
+  },
+  fill: { height: "100%", borderRadius: 3, backgroundColor: colors.primary },
+  guessRow: { flexDirection: "row", alignItems: "center", gap: space(2) },
+  grow: { flex: 1 },
+  wrongRow: { flexDirection: "row", alignItems: "center", gap: space(2) },
+  result: { alignItems: "center" },
+  stretch: { alignSelf: "stretch", marginTop: space(1) },
+  sealed: { flexDirection: "row", alignItems: "center", gap: space(2) },
 });

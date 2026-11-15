@@ -3,7 +3,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { api } from "@convex/_generated/api";
-import { Avatar, Button, Card, Screen, Txt } from "@/components/ui";
+import { Avatar, Button, Card, Icon, Pill, Screen, Section, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
@@ -16,7 +16,7 @@ import * as haptics from "@/utils/haptics";
 const PERKS = [
   "A ring on your avatar on every rival's board",
   "The same ring on the Sunday reveal, for the whole group to see",
-  "Free during launch. Changes nothing about the scores",
+  "Changes nothing about the scores",
 ];
 
 export function Pass() {
@@ -44,30 +44,41 @@ export function Pass() {
 
   return (
     <Screen back title="Season Pass">
-      <Card tone="accent" style={styles.hero}>
-        <Avatar emoji={me?.emoji ?? "🐔"} size={72} hasPass />
+      <Card tone="soft" style={styles.hero}>
+        <Avatar emoji={me?.emoji ?? "🐔"} size={80} hasPass />
         <Txt variant="title" align="center">
-          ✨ Season Pass
+          Look the part
         </Txt>
-        <Txt align="center">Look the part while you climb the pecking order.</Txt>
+        <Txt color={colors.muted} align="center">
+          A ring on your avatar while you climb the pecking order.
+        </Txt>
+        <View style={styles.center}>
+          <Pill label="Free during launch" tone="primary" />
+        </View>
       </Card>
 
-      <Card>
-        {PERKS.map((perk) => (
-          <View key={perk} style={styles.perk}>
-            <Txt>✨</Txt>
-            <Txt style={styles.grow}>{perk}</Txt>
-          </View>
-        ))}
-        <Txt variant="caption" color={colors.muted}>
-          Cosmetic only. Powers are earned, never bought.
-        </Txt>
-      </Card>
+      <Section title="What you get" footnote="Cosmetic only. Powers are earned, never bought.">
+        <Card>
+          {PERKS.map((perk) => (
+            <View key={perk} style={styles.perk}>
+              <View style={styles.check}>
+                <Icon name="check" size={14} color={colors.primary} strokeWidth={2.6} />
+              </View>
+              <Txt style={styles.grow}>{perk}</Txt>
+            </View>
+          ))}
+        </Card>
+      </Section>
 
       {me?.hasPass ? (
-        <Card testID="pass-owned">
-          <Txt variant="title">✨ You have the Season Pass</Txt>
-          <Txt color={colors.muted}>Your ring is showing on every board.</Txt>
+        <Card testID="pass-owned" style={styles.owned}>
+          <Icon name="sparkle" size={22} color={colors.good} />
+          <View style={styles.grow}>
+            <Txt variant="heading">You have the Season Pass</Txt>
+            <Txt variant="caption" color={colors.muted}>
+              Your ring is showing on every board.
+            </Txt>
+          </View>
         </Card>
       ) : whop && !whop.connected ? (
         <>
@@ -96,7 +107,18 @@ export function Pass() {
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: "center" },
-  perk: { flexDirection: "row", gap: space(2), alignItems: "flex-start" },
+  hero: { alignItems: "center", gap: space(2), paddingVertical: space(6) },
+  perk: { flexDirection: "row", gap: space(3), alignItems: "flex-start" },
+  check: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    marginTop: 1,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  owned: { flexDirection: "row", alignItems: "center", gap: space(3), backgroundColor: colors.goodSoft, borderColor: colors.goodSoft },
   grow: { flex: 1 },
+  center: { alignSelf: "center" },
 });

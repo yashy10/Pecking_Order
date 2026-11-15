@@ -1,9 +1,10 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "@convex/_generated/api";
-import { Button, Card, Field, Txt } from "@/components/ui";
+import { StyleSheet, View } from "react-native";
+import { Button, Card, Field, Icon, Pill, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors } from "@/theme";
+import { colors, radius, space } from "@/theme";
 import type { Today } from "@/utils/convex";
 import { errorMessage } from "@/utils/errors";
 
@@ -38,10 +39,13 @@ export function PromptCard({ today }: { today: Today }) {
   }
 
   return (
-    <Card>
-      <Txt variant="caption" color={colors.muted}>
-        TODAY'S QUESTION
-      </Txt>
+    <Card testID="prompt-card">
+      <View style={styles.titleRow}>
+        <Txt variant="overline" color={colors.muted} style={styles.grow}>
+          Today's question
+        </Txt>
+        <Pill label="+10 at the reveal" tone="soft" />
+      </View>
       <Txt variant="title">{prompt.question}</Txt>
       {editing ? (
         <>
@@ -50,21 +54,45 @@ export function PromptCard({ today }: { today: Today }) {
             value={value}
             onChangeText={setDraft}
             placeholder="Keep it short and funny"
+            accessibilityLabel="Your answer"
             maxLength={140}
             multiline
           />
+          <View style={styles.footer}>
+            <Txt variant="caption" color={colors.muted} tabular style={styles.grow}>
+              {value.length}/140 · Friends guess who wrote it tomorrow
+            </Txt>
+          </View>
           {error ? <Txt color={colors.bad}>{error}</Txt> : null}
           <Button label="Save answer" onPress={submit} loading={busy} disabled={!value.trim()} />
         </>
       ) : (
         <>
-          <Txt>“{prompt.myAnswer}”</Txt>
-          <Txt variant="caption" color={colors.muted}>
-            Saved for tomorrow's game. +10 at the reveal.
-          </Txt>
-          <Button label="Edit" variant="ghost" onPress={() => setDraft(prompt.myAnswer ?? "")} />
+          <View style={styles.answer}>
+            <Txt>“{prompt.myAnswer}”</Txt>
+          </View>
+          <View style={styles.footer}>
+            <Icon name="check" size={16} color={colors.good} />
+            <Txt variant="caption" color={colors.muted} style={styles.grow}>
+              Saved for tomorrow's game
+            </Txt>
+            <Button
+              label="Edit"
+              icon="edit"
+              variant="ghost"
+              size="sm"
+              onPress={() => setDraft(prompt.myAnswer ?? "")}
+            />
+          </View>
         </>
       )}
     </Card>
   );
 }
+
+const styles = StyleSheet.create({
+  titleRow: { flexDirection: "row", alignItems: "center", gap: space(2) },
+  grow: { flex: 1 },
+  footer: { flexDirection: "row", alignItems: "center", gap: space(2) },
+  answer: { backgroundColor: colors.sunken, borderRadius: radius.field, padding: space(3) },
+});

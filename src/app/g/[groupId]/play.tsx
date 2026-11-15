@@ -1,8 +1,8 @@
 import { useQuery } from "convex/react";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { Card, Loading, Screen, Txt } from "@/components/ui";
+import { Button, EmptyState, Loading, Screen } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { BlurGame } from "@/screens/blur-game";
 import { WhoSaidItGame } from "@/screens/who-said-it-game";
@@ -24,10 +24,10 @@ export default function PlayRoute() {
   }
   if (today === null || !today.game) {
     return (
-      <Screen back title="Nothing to play">
-        <Card>
-          <Txt>There's no game right now. Check back when the next one drops.</Txt>
-        </Card>
+      <Screen back backTo={`/g/${id}`}>
+        <EmptyState emoji="🌙" title="Nothing to play" body="There's no game right now. Check back when the next one drops.">
+          <Button label="Back to the group" onPress={() => router.replace(`/g/${id}`)} />
+        </EmptyState>
       </Screen>
     );
   }

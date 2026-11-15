@@ -1,10 +1,10 @@
 import { useConvex, useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { api } from "@convex/_generated/api";
 import { ProfileForm } from "@/components/profile-form";
-import { Button, Card, Loading, Screen, Txt } from "@/components/ui";
+import { Avatar, Button, Card, EmptyState, Screen, ScreenSkeleton, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
@@ -24,18 +24,21 @@ export function Join({ code }: { code: string }) {
   if (!token || me === undefined || preview === undefined) {
     return (
       <Screen>
-        <Loading />
+        <ScreenSkeleton />
       </Screen>
     );
   }
 
   if (preview === null) {
     return (
-      <Screen back title="Code not found">
-        <Card>
-          <Txt>No group has the code {code.toUpperCase()}. Check it with whoever sent it.</Txt>
-        </Card>
-        <Button label="Go home" onPress={() => router.replace("/")} />
+      <Screen back>
+        <EmptyState
+          emoji="🧐"
+          title="Code not found"
+          body={`No group has the code ${code.toUpperCase()}. Check it with whoever sent it. Codes are five letters and numbers.`}
+        >
+          <Button label="Go home" onPress={() => router.replace("/")} />
+        </EmptyState>
       </Screen>
     );
   }
@@ -56,28 +59,48 @@ export function Join({ code }: { code: string }) {
     }
   }
 
+  const extra = Math.max(0, preview.memberCount - preview.emojis.length);
   return (
     <Screen>
-      <Card tone="accent">
-        <Txt variant="caption">YOU'RE INVITED TO</Txt>
-        <Txt variant="display">{preview.name}</Txt>
-        <View style={styles.emojis}>
+      <Card tone="soft" style={styles.invite} testID="join-invite">
+        <Txt variant="overline" color={colors.muted}>
+          You're invited to
+        </Txt>
+        <Txt variant="display" align="center">
+          {preview.name}
+        </Txt>
+        <View style={styles.flock}>
           {preview.emojis.map((e, i) => (
-            <Text key={`${e}-${i}`} style={styles.emoji}>
-              {e}
-            </Text>
+            <View key={`${e}-${i}`} style={[styles.flockItem, i > 0 && styles.overlap]}>
+              <Avatar emoji={e} size={40} />
+            </View>
           ))}
+          {extra > 0 ? (
+            <View style={[styles.flockItem, styles.overlap, styles.more]}>
+              <Txt variant="caption" tabular>
+                +{extra}
+              </Txt>
+            </View>
+          ) : null}
         </View>
-        <Txt>{preview.memberCount} playing. Nobody knows who's winning until Sunday.</Txt>
+        <Txt color={colors.muted} align="center">
+          {preview.memberCount} playing. Nobody knows who's winning until Sunday.
+        </Txt>
       </Card>
 
       {me === null ? (
         <ProfileForm cta="Join and play" onSaved={onJoin} />
       ) : (
-        <>
+        <View style={styles.meJoin}>
+          <View style={styles.meRow}>
+            <Avatar emoji={me.emoji} hasPass={me.hasPass} size={40} />
+            <Txt variant="heading" style={styles.grow}>
+              Joining as {me.name}
+            </Txt>
+          </View>
           {error ? <Txt color={colors.bad}>{error}</Txt> : null}
           <Button testID="join-group" label={`Join ${preview.name}`} onPress={onJoin} loading={busy} />
-        </>
+        </View>
       )}
       {me === null && error ? <Txt color={colors.bad}>{error}</Txt> : null}
     </Screen>
@@ -85,6 +108,12 @@ export function Join({ code }: { code: string }) {
 }
 
 const styles = StyleSheet.create({
-  emojis: { flexDirection: "row", flexWrap: "wrap", gap: space(1) },
-  emoji: { fontSize: 28 },
+  invite: { alignItems: "center", gap: space(3), paddingVertical: space(6) },
+  flock: { flexDirection: "row", alignItems: "center", justifyContent: "center", flexWrap: "wrap" },
+  flockItem: { borderRadius: 22, borderWidth: 2, borderColor: colors.accentSoft },
+  overlap: { marginLeft: -10 },
+  more: { width: 44, height: 44, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
+  meJoin: { gap: space(3) },
+  meRow: { flexDirection: "row", alignItems: "center", gap: space(3) },
+  grow: { flex: 1 },
 });

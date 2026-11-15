@@ -2,11 +2,11 @@ import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInRight, FlipInEasyX } from "react-native-reanimated";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { Avatar, Button, Card, Loading, Pill, Screen, Txt } from "@/components/ui";
+import { Avatar, Button, Card, EmptyState, Icon, Loading, Pill, Screen, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
@@ -32,18 +32,21 @@ export function WhoSaidItGame({ groupId, gameId }: { groupId: Id<"groups">; game
 
   if (round === undefined) {
     return (
-      <Screen back title="Who Said It">
+      <Screen back title="Who Said It" backTo={`/g/${groupId}`}>
         <Loading label="Shuffling yesterday's answers…" />
       </Screen>
     );
   }
   if (round === null || round.quotes.length === 0) {
     return (
-      <Screen back title="Who Said It">
-        <Card>
-          <Txt>There's nothing for you to guess in this round.</Txt>
-        </Card>
-        <Button label="Back to the group" onPress={leave} />
+      <Screen back title="Who Said It" backTo={`/g/${groupId}`}>
+        <EmptyState
+          emoji="🤷"
+          title="Nothing to guess"
+          body="Every quote in this round is yours, so there's nothing for you to guess today."
+        >
+          <Button label="Back to the group" onPress={leave} />
+        </EmptyState>
       </Screen>
     );
   }
@@ -90,12 +93,19 @@ export function WhoSaidItGame({ groupId, gameId }: { groupId: Id<"groups">; game
   }
 
   return (
-    <Screen back title="Who Said It">
+    <Screen
+      back
+      title="Who Said It"
+      subtitle={`Quote ${current + 1} of ${quotes.length}`}
+      backTo={`/g/${groupId}`}
+    >
       <View style={styles.dots}>
         {quotes.map((q, i) => (
           <Pressable
             key={q.answerId}
-            accessibilityLabel={`Quote ${i + 1}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Quote ${i + 1}${picks[q.answerId] ? ", picked" : ""}`}
+            hitSlop={8}
             onPress={() => setIndex(i)}
             style={[styles.dot, picks[q.answerId] && styles.dotPicked, i === current && styles.dotCurrent]}
           />
@@ -103,9 +113,12 @@ export function WhoSaidItGame({ groupId, gameId }: { groupId: Id<"groups">; game
       </View>
 
       <Animated.View key={quote.answerId} entering={FadeInRight.duration(250)}>
-        <Card tone="accent" style={styles.quoteCard}>
-          <Txt variant="caption">WHO SAID IT?</Txt>
-          <Txt variant="title">“{quote.text}”</Txt>
+        <Card tone="soft" style={styles.quoteCard}>
+          <Text style={styles.quoteMark}>“</Text>
+          <Txt variant="title">{quote.text}</Txt>
+          <Txt variant="overline" color={colors.muted}>
+            Who said it?
+          </Txt>
         </Card>
       </Animated.View>
 
@@ -119,10 +132,11 @@ export function WhoSaidItGame({ groupId, gameId }: { groupId: Id<"groups">; game
               accessibilityRole="button"
               accessibilityState={{ selected }}
               onPress={() => pick(o.memberId)}
-              style={[styles.chip, selected && styles.chipOn]}
+              accessibilityLabel={o.name}
+              style={({ pressed }) => [styles.chip, selected && styles.chipOn, pressed && styles.chipPressed]}
             >
               <Avatar emoji={o.emoji} size={36} />
-              <Txt style={styles.chipName} color={selected ? colors.primaryInk : colors.ink}>
+              <Txt variant="heading" numberOfLines={1} style={styles.chipName} color={selected ? colors.primary : colors.ink}>
                 {o.name}
               </Txt>
             </Pressable>
@@ -134,8 +148,8 @@ export function WhoSaidItGame({ groupId, gameId }: { groupId: Id<"groups">; game
       {allPicked ? (
         <Button testID="wsi-lock-in" label="Lock in" onPress={lockIn} loading={busy} />
       ) : (
-        <Txt variant="caption" color={colors.muted} align="center">
-          {pickedCount} of {quotes.length} picked
+        <Txt variant="caption" color={colors.muted} align="center" tabular>
+          {pickedCount} of {quotes.length} picked · tap the dots to go back
         </Txt>
       )}
     </Screen>
@@ -155,11 +169,19 @@ function Results({
 }) {
   const byAnswer = new Map(result.reveal.map((r) => [r.answerId, r]));
   return (
-    <Screen back title="Who Said It">
-      <Card testID="wsi-result">
-        <Txt variant="title">🔒 {result.points} points sealed</Txt>
-        <Txt color={colors.muted}>
-          {result.correct} of {result.asked} right. Nobody sees scores until tonight's reveal.
+    <Screen back title="Who Said It" subtitle="Round over">
+      <Card testID="wsi-result" style={styles.resultHead}>
+        <Txt variant="overline" color={colors.muted}>
+          {result.correct} of {result.asked} right
+        </Txt>
+        <View style={styles.sealed}>
+          <Icon name="lock" size={20} color={colors.primary} />
+          <Txt variant="title" tabular>
+            {result.points} points sealed
+          </Txt>
+        </View>
+        <Txt color={colors.muted} align="center">
+          Nobody sees scores until tonight's reveal.
         </Txt>
       </Card>
       {round.quotes.map((q, i) => {
@@ -168,14 +190,16 @@ function Results({
         return (
           <Animated.View key={q.answerId} entering={FlipInEasyX.delay(i * 250).duration(450)}>
             <Card>
-              <Txt>“{q.text}”</Txt>
+              <Txt variant="heading">“{q.text}”</Txt>
               <View style={styles.authorRow}>
                 <Avatar emoji={author?.authorEmoji} size={32} />
-                <Txt style={styles.grow}>{author?.authorName}</Txt>
+                <Txt variant="label" color={colors.muted} style={styles.grow}>
+                  {author?.authorName}
+                </Txt>
                 {mine ? (
                   <Pill
-                    label={mine === author?.authorId ? "you got it" : "missed"}
-                    tone={mine === author?.authorId ? "good" : "bad"}
+                    label={mine === author?.authorId ? "You got it" : "Missed"}
+                    tone={mine === author?.authorId ? "goodSoft" : "badSoft"}
                   />
                 ) : null}
               </View>
@@ -189,12 +213,13 @@ function Results({
 }
 
 const styles = StyleSheet.create({
-  dots: { flexDirection: "row", justifyContent: "center", gap: space(2) },
+  dots: { flexDirection: "row", justifyContent: "center", gap: space(2), paddingVertical: space(1) },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.fog },
   dotPicked: { backgroundColor: colors.primary },
   dotCurrent: { transform: [{ scale: 1.4 }] },
-  quoteCard: { minHeight: 150, justifyContent: "center" },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: space(3) },
+  quoteCard: { minHeight: 180, justifyContent: "center", gap: space(2), paddingVertical: space(6) },
+  quoteMark: { fontSize: 56, lineHeight: 48, color: colors.primary, fontWeight: "800" },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: space(2) },
   chip: {
     flexBasis: "47%",
     flexGrow: 1,
@@ -202,13 +227,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: space(2),
     padding: space(3),
-    borderRadius: radius.field,
-    borderWidth: 2,
+    minHeight: 60,
+    borderRadius: radius.tile,
+    borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  chipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipName: { flex: 1, fontWeight: "800" },
+  chipOn: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  chipPressed: { transform: [{ scale: 0.98 }] },
+  chipName: { flex: 1 },
+  resultHead: { alignItems: "center" },
+  sealed: { flexDirection: "row", alignItems: "center", gap: space(2) },
   authorRow: { flexDirection: "row", alignItems: "center", gap: space(2) },
   grow: { flex: 1 },
 });
