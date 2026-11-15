@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "convex/react";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
@@ -122,9 +123,16 @@ export function PowersTray({ groupId }: { groupId: Id<"groups"> }) {
       ) : error ? (
         <Txt color={colors.bad}>{error}</Txt>
       ) : (
-        <Txt variant="caption" color={colors.muted}>
-          Earned with streaks and the best score of the day. Never bought.
-        </Txt>
+        <View style={styles.footer}>
+          <Txt variant="caption" color={colors.muted} style={styles.grow}>
+            Earned with streaks and the best score of the day. Never bought.
+          </Txt>
+          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push("/pass")}>
+            <Txt variant="caption" color={colors.primary}>
+              ✨ Season Pass
+            </Txt>
+          </Pressable>
+        </View>
       )}
     </Card>
   );
@@ -132,6 +140,7 @@ export function PowersTray({ groupId }: { groupId: Id<"groups"> }) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: space(3) },
+  footer: { flexDirection: "row", alignItems: "center", gap: space(3) },
   grow: { flex: 1 },
   bold: { fontWeight: "800" },
   emoji: { fontSize: 26 },
