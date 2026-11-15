@@ -27,7 +27,7 @@ export function Card({ children, tone = "surface", flush, style, testID }: Props
       style={[
         styles.card,
         lit
-          ? { backgroundColor: place.soft, borderColor: place.fill }
+          ? { backgroundColor: place.soft, borderColor: place.soft }
           : tone === "fog"
             ? styles.fog
             : styles.surface,
@@ -43,11 +43,11 @@ export function Card({ children, tone = "surface", flush, style, testID }: Props
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius.card,
-    borderWidth: 2,
+    borderWidth: 1.5,
     padding: space(5),
     gap: space(3),
   },
   flush: { padding: 0, gap: 0, overflow: "hidden" },
-  surface: { backgroundColor: colors.surface, borderColor: colors.border, boxShadow: elevation.card, marginBottom: 4 },
+  surface: { backgroundColor: colors.surface, borderColor: colors.border, boxShadow: elevation.card },
   fog: { backgroundColor: colors.fog, borderColor: colors.fog },
 });

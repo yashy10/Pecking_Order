@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "@convex/_generated/api";
 import { ProfileForm } from "@/components/profile-form";
-import { Avatar, Button, Card, Field, GameButton, Icon, Mascot, Screen, Skeleton, Txt } from "@/components/ui";
+import { Avatar, Button, Card, Field, GameButton, Icon, Logo, Screen, Skeleton, Txt } from "@/components/ui";
 import { ONE_LINER } from "@/constants";
 import { useToken } from "@/hooks/use-identity";
 import { colors, fonts, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
 import { lastGroup } from "@/utils/last-group";
 
-// Owned by Track A. Home: Pip the chick and the name at the top, and everything you can do in
+// Owned by Track A. Home: the mark and the name at the top, and everything you can do in
 // the lower half, where a thumb reaches. One thing at a time: tapping "New group" or "Join"
 // swaps the lower half for that one step.
 // First run goes to /welcome (onboarding). After that: your groups, then start or join one.
@@ -56,12 +56,12 @@ export function Home() {
   return (
     <Screen backdrop="full" place="home" fill>
       <View style={styles.brand}>
-        <Mascot mood={panel ? "thinking" : "hello"} size={panel ? 88 : 132} />
+        <Logo size={panel ? 36 : 52} />
         <Text style={styles.wordmark} accessibilityRole="header">
-          Pecking Order
+          Pecking{"\n"}Order
         </Text>
         {panel ? null : (
-          <Txt color={colors.muted} align="center" style={styles.lede}>
+          <Txt color={colors.muted} style={styles.lede}>
             {ONE_LINER}
           </Txt>
         )}
@@ -77,7 +77,7 @@ export function Home() {
           <Redirect href="/welcome" />
         ) : panel === "profile" ? (
           <ProfileForm
-            title="Change your look"
+            title="Edit profile"
             cta="Save"
             initialName={me.name}
             initialEmoji={me.emoji}
@@ -103,20 +103,20 @@ export function Home() {
                     tone={i === 0 ? "brass" : "glass"}
                     overline={
                       g.phase === "finale"
-                        ? "The winner is out!"
+                        ? "Results are in"
                         : g.phase === "revealed"
                           ? `${g.dayLabel} · scores are out`
                           : g.dayLabel
                     }
                     title={g.name}
-                    leading={<GroupMark name={g.name} />}
+                    leading={<GroupMark name={g.name} onFill={i === 0} />}
                     onPress={() => router.push(`/g/${g.groupId}`)}
                   />
                 ))}
               </View>
             ) : (
-              <Txt variant="heading" align="center" style={styles.empty}>
-                Start a group for your friends, or join theirs.
+              <Txt color={colors.muted} align="center" style={styles.empty}>
+                Start a group for your friends, or join theirs with a code.
               </Txt>
             )}
 
@@ -125,9 +125,9 @@ export function Home() {
                 <GameButton
                   compact
                   tone={hasGroups ? "glass" : "brass"}
-                  overline="Start"
+                  overline="Start one"
                   title="New group"
-                  leading={<Text style={styles.tileEmoji}>✨</Text>}
+                  leading={<Icon name="plus" size={20} />}
                   testID="open-create"
                   onPress={() => setPanel("create")}
                 />
@@ -135,9 +135,9 @@ export function Home() {
               <View style={styles.cell}>
                 <GameButton
                   compact
-                  overline="Got a code?"
+                  overline="Have a code?"
                   title="Join"
-                  leading={<Text style={styles.tileEmoji}>🔑</Text>}
+                  leading={<Icon name="key" size={20} />}
                   testID="open-join"
                   onPress={() => setPanel("join")}
                 />
@@ -147,7 +147,7 @@ export function Home() {
             <View style={styles.footer}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Playing as ${me.name}. Change your look`}
+                accessibilityLabel={`Playing as ${me.name}. Edit profile`}
                 testID="edit-profile"
                 onPress={() => setPanel("profile")}
                 style={({ pressed }) => [styles.me, pressed && styles.pressed]}
@@ -217,14 +217,14 @@ function CreateGroup({ onCancel }: { onCancel: () => void }) {
       {error ? <Txt color={colors.bad}>{error}</Txt> : null}
       <Button
         testID="create-group"
-        label="Make my group"
+        label="Create group"
         icon="plus"
         onPress={onCreate}
         loading={busy}
         disabled={!name.trim()}
       />
       <Txt variant="caption" color={colors.muted} align="center">
-        Next you get a link and a code to send to your friends.
+        You get a link and a code to share next.
       </Txt>
       <Button label="Back" variant="ghost" size="sm" onPress={onCancel} />
     </Card>
@@ -239,8 +239,8 @@ function JoinWithCode({ onCancel }: { onCancel: () => void }) {
   };
   return (
     <Card>
-      <Txt variant="title">Type your code</Txt>
-      <Txt color={colors.muted}>Your friend has it on their invite screen.</Txt>
+      <Txt variant="title">Enter your code</Txt>
+      <Txt color={colors.muted}>It is on your friend's invite screen.</Txt>
       <Field
         testID="join-code-field"
         value={code}
@@ -262,17 +262,17 @@ function JoinWithCode({ onCancel }: { onCancel: () => void }) {
 }
 
 /** The group's first letter on a small white tile. Groups have no picture of their own. */
-function GroupMark({ name }: { name: string }) {
+function GroupMark({ name, onFill }: { name: string; onFill?: boolean }) {
   return (
-    <View style={styles.mark}>
+    <View style={[styles.mark, onFill && styles.markOnFill]}>
       <Text style={styles.markText}>{name.trim().charAt(0).toUpperCase() || "?"}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  brand: { alignItems: "center", gap: space(2), paddingTop: space(6) },
-  wordmark: { fontFamily: fonts.display, fontSize: 40, lineHeight: 46, textAlign: "center", color: colors.ink },
+  brand: { alignItems: "flex-start", gap: space(4), paddingTop: space(8) },
+  wordmark: { fontFamily: fonts.display, fontSize: 44, lineHeight: 44, letterSpacing: -1.2, color: colors.ink },
   lede: { maxWidth: 300 },
   zone: { flexGrow: 1, justifyContent: "flex-end", gap: space(4), paddingTop: space(8) },
   zoneLabel: { paddingHorizontal: space(1) },
@@ -280,8 +280,7 @@ const styles = StyleSheet.create({
   empty: { paddingHorizontal: space(4) },
   grid: { flexDirection: "row", gap: space(3) },
   cell: { flex: 1 },
-  tileEmoji: { fontSize: 26 },
-  codeInput: { fontFamily: fonts.display, fontSize: 26, letterSpacing: 6, textAlign: "center" },
+  codeInput: { fontFamily: fonts.display, fontSize: 24, letterSpacing: 6, textAlign: "center" },
   footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space(3) },
   me: {
     flexDirection: "row",
@@ -299,18 +298,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: space(4),
     minHeight: 44,
     borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
-    borderWidth: 2,
-    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
   pressed: { opacity: 0.7 },
   mark: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.sunken,
   },
-  markText: { fontFamily: fonts.display, fontSize: 22, color: colors.ink },
+  markOnFill: { backgroundColor: colors.surface },
+  markText: { fontFamily: fonts.display, fontSize: 20, color: colors.ink },
 });

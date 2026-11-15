@@ -59,8 +59,8 @@ export function GoogleButton({ onPress, loading, disabled }: Props) {
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 58,
-    borderRadius: radius.field,
+    minHeight: 54,
+    borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: G.stroke,
     backgroundColor: G.fill,

@@ -1,8 +1,8 @@
 import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import type { Id } from "@convex/_generated/dataModel";
-import { Avatar, Button, Card, Icon, Mascot, Pill, Txt, usePlace } from "@/components/ui";
-import { colors, radius, space } from "@/theme";
+import { Avatar, Button, Card, Icon, Mark, Pill, Txt, usePlace } from "@/components/ui";
+import { colors, space } from "@/theme";
 import type { Today } from "@/utils/convex";
 
 // Owned by Track A. Four states: no game, play, secret (played), scores out.
@@ -11,13 +11,13 @@ import type { Today } from "@/utils/convex";
 const GAME = {
   blur: {
     name: "Blur",
-    emoji: "🔍",
-    line: "A blurry photo slowly gets clear. Guess fast to score more!",
+    icon: "search",
+    line: "A photo starts blurred and slowly sharpens. The faster you guess, the more you score.",
   },
   whoSaidIt: {
     name: "Who Said It",
-    emoji: "🗣️",
-    line: "Your friends wrote secret answers yesterday. Guess who wrote each one!",
+    icon: "chat",
+    line: "Yesterday's answers, with the names removed. Guess who wrote each one.",
   },
 } as const;
 
@@ -27,12 +27,12 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
   if (!game) {
     return (
       <Card tone="soft" style={styles.center}>
-        <Mascot mood="cheering" size={112} />
+        <Mark icon="crown" tone="plain" />
         <Txt variant="title" align="center">
-          The winner is revealed tonight!
+          Finale tonight
         </Txt>
         <Txt color={colors.muted} align="center">
-          No game on Sunday. Come back tonight to see the whole board.
+          No game on Sunday. The full board is revealed tonight.
         </Txt>
       </Card>
     );
@@ -53,7 +53,7 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
         </View>
       ) : null}
       <Txt variant="caption" color={colors.muted} tabular style={styles.grow}>
-        {played.count === 0 ? "Be the first to play!" : `${played.count} of ${group.memberCount} friends have played`}
+        {played.count === 0 ? "Nobody has played yet" : `${played.count} of ${group.memberCount} have played`}
       </Txt>
     </View>
   );
@@ -62,13 +62,13 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
     const sat = myPlay.points === null;
     return (
       <Card tone="soft" style={styles.center} testID="revealed-card">
-        <Mascot mood={sat ? "sleepy" : "cheering"} size={96} />
+        <Mark icon={sat ? "moon" : "sparkle"} tone="plain" />
         <Txt variant="overline" color={colors.muted}>
-          Today's scores are out
+          Today's scores are in
         </Txt>
         {sat ? (
           <Txt variant="title" align="center">
-            You skipped today
+            You sat this one out
           </Txt>
         ) : (
           <Txt variant="display" tabular color={colors.good} align="center" style={styles.points}>
@@ -76,11 +76,11 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
           </Txt>
         )}
         <Txt color={colors.muted} align="center">
-          {sat ? "No points this time. A new game comes tomorrow!" : "points for you. A new game comes tomorrow!"}
+          {sat ? "No points today. The next game drops tomorrow." : "points added to your week. The next game drops tomorrow."}
         </Txt>
         <View style={styles.stretch}>
           <Button
-            label="See who moved"
+            label="See how the board moved"
             icon="board"
             testID="see-board"
             onPress={() => router.navigate(`/g/${groupId}/board`)}
@@ -94,18 +94,15 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
     return (
       <>
         <Card tone="soft" style={styles.center} testID="sealed-card">
-          <Mascot mood="peeking" size={96} />
+          <Mark icon="lock" tone="plain" />
           <Txt variant="title" align="center">
-            Shh! Your score is a secret
+            Your score is sealed
           </Txt>
-          <View style={styles.secret}>
-            <Icon name="lock" size={20} color={colors.ink} strokeWidth={2.4} />
-            <Txt variant="heading" tabular>
-              {myPlay.points} points saved
-            </Txt>
-          </View>
+          <Txt variant="display" tabular align="center">
+            {myPlay.points}
+          </Txt>
           <Txt color={colors.muted} align="center">
-            Everyone finds out tonight, all at the same time.
+            Only you can see this. Everyone's scores are revealed tonight, at the same time.
           </Txt>
           {playedRow}
         </Card>
@@ -117,10 +114,8 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
   return (
     <>
       <Card tone="soft" style={styles.center}>
-        {double ? <Pill label={`Double points today! ×${game.multiplier}`} tone="bad" /> : null}
-        <View style={styles.gameGlyph}>
-          <Text style={styles.gameEmoji}>{info.emoji}</Text>
-        </View>
+        {double ? <Pill label={`×${game.multiplier} points today`} tone="primary" /> : null}
+        <Mark icon={info.icon} tone="plain" />
         <Txt variant="overline" color={colors.muted}>
           Today's game
         </Txt>
@@ -145,26 +140,26 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
 }
 
 const STEPS = [
-  { emoji: "🎮", label: "Play" },
-  { emoji: "🤫", label: "Secret score" },
-  { emoji: "👑", label: "Sunday winner" },
+  { icon: "play", label: "Play" },
+  { icon: "lock", label: "Score sealed" },
+  { icon: "crown", label: "Sunday reveal" },
 ] as const;
 
-/** How the week works, in three pictures. The step you're on is lit. */
+/** How the week works, in three steps. The one you're on is lit. */
 function Steps({ at }: { at: 1 | 2 | 3 }) {
   const place = usePlace();
   return (
     <View
       style={styles.steps}
       accessible
-      accessibilityLabel={`How it works. Step 1, play. Step 2, your score stays secret. Step 3, the winner is revealed on Sunday. You are on step ${at}.`}
+      accessibilityLabel={`How it works. Step 1, play. Step 2, your score is sealed. Step 3, the full board is revealed on Sunday. You are on step ${at}.`}
     >
       {STEPS.map((s, i) => {
         const on = i + 1 === at;
         return (
           <View key={s.label} style={styles.step}>
-            <View style={[styles.stepDot, on && { backgroundColor: place.fill, borderColor: place.edge }]}>
-              <Text style={styles.stepEmoji}>{s.emoji}</Text>
+            <View style={[styles.stepDot, on && { backgroundColor: place.fill, borderColor: place.fill }]}>
+              <Icon name={s.icon} size={18} color={on ? colors.ink : colors.muted} />
             </View>
             <Txt variant="caption" align="center" color={on ? colors.ink : colors.muted}>
               {s.label}
@@ -179,40 +174,21 @@ function Steps({ at }: { at: 1 | 2 | 3 }) {
 const styles = StyleSheet.create({
   center: { alignItems: "center", paddingVertical: space(6) },
   stretch: { alignSelf: "stretch", marginTop: space(2) },
-  points: { fontSize: 64, lineHeight: 70 },
-  gameGlyph: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  gameEmoji: { fontSize: 48 },
+  points: { fontSize: 56, lineHeight: 60 },
   grow: { flex: 1 },
-  secret: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space(2),
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    paddingHorizontal: space(4),
-    paddingVertical: space(2),
-  },
   played: { flexDirection: "row", alignItems: "center", gap: space(2), alignSelf: "stretch", marginTop: space(1) },
   flock: { flexDirection: "row" },
   overlap: { marginLeft: -10 },
   steps: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: space(2) },
   step: { flex: 1, alignItems: "center", gap: space(1.5) },
   stepDot: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
-  stepEmoji: { fontSize: 26 },
 });

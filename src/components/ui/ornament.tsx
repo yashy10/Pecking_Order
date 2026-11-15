@@ -20,5 +20,5 @@ export function Ornament({ width = 32 }: { width?: number }) {
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  big: { width: 12, height: 12, borderRadius: 6 },
+  big: { width: 8, height: 8, borderRadius: 4 },
 });

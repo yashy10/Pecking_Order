@@ -1,6 +1,6 @@
 import type { TabTriggerSlotProps } from "expo-router/ui";
 import { Pressable, StyleSheet, View } from "react-native";
-import { colors, places, space, type Place } from "@/theme";
+import { colors, fonts, places, space, type Place } from "@/theme";
 import { tap } from "@/utils/haptics";
 import { Icon, type IconName } from "./icon";
 import { Txt } from "./txt";
@@ -31,11 +31,11 @@ export function TabButton({ icon, label, dot, place = "today", isFocused, onPres
     >
       <View>
         <View style={[styles.pill, isFocused && { backgroundColor: tint.fill }]}>
-          <Icon name={icon} size={24} color={isFocused ? colors.ink : colors.muted} strokeWidth={isFocused ? 2.6 : 2.2} />
+          <Icon name={icon} size={22} color={isFocused ? colors.ink : colors.muted} strokeWidth={isFocused ? 2.2 : 1.8} />
         </View>
         {dot ? <View style={styles.dot} /> : null}
       </View>
-      <Txt variant="caption" color={isFocused ? colors.ink : colors.muted}>
+      <Txt variant="caption" color={isFocused ? colors.ink : colors.muted} style={isFocused && styles.on}>
         {label}
       </Txt>
     </Pressable>
@@ -45,14 +45,15 @@ export function TabButton({ icon, label, dot, place = "today", isFocused, onPres
 const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 3, paddingTop: space(2), paddingBottom: space(1) },
   pressed: { opacity: 0.7 },
-  pill: { width: 60, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  on: { fontFamily: fonts.bold },
+  pill: { width: 52, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   dot: {
     position: "absolute",
-    top: 0,
-    right: 8,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    top: -1,
+    right: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: colors.bad,
     borderWidth: 2,
     borderColor: colors.surface,

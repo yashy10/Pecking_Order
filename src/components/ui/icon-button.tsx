@@ -14,7 +14,7 @@ type Props = {
   testID?: string;
 };
 
-/** A 48-point round touch target holding one icon. */
+/** A 44-point round touch target holding one icon. */
 export function IconButton({ icon, label, onPress, tone = "plain", color, testID }: Props) {
   const place = usePlace();
   return (
@@ -29,24 +29,24 @@ export function IconButton({ icon, label, onPress, tone = "plain", color, testID
       }}
       style={({ pressed }) => [
         styles.base,
-        tone === "tonal" && { backgroundColor: place.soft, borderColor: place.fill },
+        tone === "tonal" && { backgroundColor: place.soft, borderColor: place.soft },
         pressed && styles.pressed,
       ]}
     >
-      <Icon name={icon} size={22} color={color ?? colors.ink} strokeWidth={2.4} />
+      <Icon name={icon} size={20} color={color ?? colors.ink} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
   pressed: { backgroundColor: colors.raised, transform: [{ scale: motion.press }] },

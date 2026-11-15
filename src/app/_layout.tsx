@@ -14,11 +14,11 @@ import { convex } from "@/utils/convex";
 // Bundled OFL fonts (assets/fonts). Until they load, render the empty page rather than
 // flashing system-font headings; on a slow web connection give up after 2.5 s and fall back.
 const FONTS = {
-  "Fredoka-SemiBold": require("../../assets/fonts/Fredoka-SemiBold.ttf"),
-  "Fredoka-Bold": require("../../assets/fonts/Fredoka-Bold.ttf"),
-  "Nunito-SemiBold": require("../../assets/fonts/Nunito-SemiBold.ttf"),
-  "Nunito-Bold": require("../../assets/fonts/Nunito-Bold.ttf"),
-  "Nunito-ExtraBold": require("../../assets/fonts/Nunito-ExtraBold.ttf"),
+  "BricolageGrotesque-SemiBold": require("../../assets/fonts/BricolageGrotesque-SemiBold.ttf"),
+  "BricolageGrotesque-Bold": require("../../assets/fonts/BricolageGrotesque-Bold.ttf"),
+  "DMSans-Regular": require("../../assets/fonts/DMSans-Regular.ttf"),
+  "DMSans-SemiBold": require("../../assets/fonts/DMSans-SemiBold.ttf"),
+  "DMSans-Bold": require("../../assets/fonts/DMSans-Bold.ttf"),
 };
 
 // On the web, paint the page itself: otherwise Safari's overscroll bounce and anything past

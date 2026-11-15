@@ -67,7 +67,7 @@ export function Banner({ groupId }: { groupId: Id<"groups"> }) {
       <View style={styles.card} testID="banner" accessibilityLiveRegion="polite">
         <View style={styles.head}>
           <Txt variant="overline" color={colors.ink} style={styles.grow}>
-            News!
+            Since the last reveal
           </Txt>
           <Pressable
             accessibilityRole="button"
@@ -102,10 +102,9 @@ function unseenEvents(events: Event[] | undefined, seen: string | null | undefin
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: colors.border,
     boxShadow: elevation.card,
-    marginBottom: 4,
     borderRadius: radius.card,
     padding: space(4),
     paddingTop: space(3),
@@ -123,6 +122,6 @@ const styles = StyleSheet.create({
   },
   closePressed: { backgroundColor: colors.border },
   row: { flexDirection: "row", alignItems: "center", gap: space(3) },
-  icon: { fontSize: 26 },
+  icon: { fontSize: 22 },
   text: { flex: 1, color: colors.ink },
 });

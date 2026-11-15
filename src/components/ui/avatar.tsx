@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "@/theme";
+import { colors, fonts } from "@/theme";
 
 type Props = {
   emoji?: string;
@@ -31,11 +31,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
-  fog: { backgroundColor: colors.fog, borderColor: colors.muted, borderStyle: "dashed" },
+  fog: { backgroundColor: colors.fog, borderColor: colors.fog },
   pass: { borderWidth: 3, borderColor: colors.primary },
   glyph: { textAlign: "center", color: colors.ink, includeFontPadding: false },
-  fogGlyph: { color: colors.muted, fontWeight: "700" },
+  fogGlyph: { color: colors.muted, fontFamily: fonts.heavy },
 });

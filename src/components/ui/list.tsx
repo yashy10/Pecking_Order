@@ -82,10 +82,10 @@ const styles = StyleSheet.create({
     gap: space(3),
     paddingHorizontal: space(4),
     paddingVertical: space(3),
-    minHeight: 64,
+    minHeight: 60,
   },
   highlight: { backgroundColor: colors.primarySoft },
   pressed: { backgroundColor: colors.raised },
   text: { flex: 1, gap: 2 },
-  divider: { height: 2, backgroundColor: colors.border, marginLeft: space(4) },
+  divider: { height: 1, backgroundColor: colors.border, marginLeft: space(4) },
 });

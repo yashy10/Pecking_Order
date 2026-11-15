@@ -25,7 +25,7 @@ export function EmptyState({ emoji, title, body, children, testID }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { alignItems: "center", gap: space(2), paddingVertical: space(8), paddingHorizontal: space(4) },
-  emoji: { fontSize: 56, marginBottom: space(1) },
+  emoji: { fontSize: 44, marginBottom: space(1) },
   body: { maxWidth: 320 },
   actions: { alignSelf: "stretch", gap: space(2), marginTop: space(3) },
 });

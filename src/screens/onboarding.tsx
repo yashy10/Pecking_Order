@@ -18,7 +18,7 @@ import {
 import { api } from "@convex/_generated/api";
 import { GoogleButton } from "@/components/google-button";
 import { ProfileForm } from "@/components/profile-form";
-import { Button, Mascot, Screen, Skeleton, Txt } from "@/components/ui";
+import { Button, Logo, Mark, Screen, Skeleton, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, fonts, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
@@ -32,19 +32,19 @@ const VERIFIER_KEY = "po_google_verifier";
 
 const SLIDES = [
   {
-    mood: "hello",
+    icon: "play",
     title: "One game a day",
-    body: "Every day there's one quick game to play with your friends. It takes about a minute.",
+    body: "A quick game drops every day for your group. It takes about a minute.",
   },
   {
-    mood: "peeking",
-    title: "Scores are a secret",
-    body: "Nobody can see who's winning. Not even you! Everyone finds out on Sunday.",
+    icon: "lock",
+    title: "Scores stay hidden",
+    body: "You only ever see who is just ahead of you and just behind. Nobody knows who's winning.",
   },
   {
-    mood: "cheering",
-    title: "Play with your friends",
-    body: "Start a group or join one with a code. Sign in so your spot is saved on any phone.",
+    icon: "crown",
+    title: "Sunday settles it",
+    body: "The full board is revealed on Sunday night. Then it all starts again.",
   },
 ] as const;
 
@@ -145,15 +145,15 @@ export function Onboarding() {
     return (
       <Screen backdrop="full" place="home" fill>
         <View style={styles.welcome}>
-          <Mascot mood="cheering" size={96} />
+          <Logo size={44} />
           <Txt variant="display" align="center">
-            Hi, {me.name}!
+            Hi, {me.name}
           </Txt>
         </View>
         <View style={styles.zone}>
           <ProfileForm
-            title="Pick your look"
-            cta="Let's play"
+            title="Set up your profile"
+            cta="Continue"
             initialName={me.name}
             onSaved={() => router.replace(next)}
           />
@@ -165,6 +165,7 @@ export function Onboarding() {
   return (
     <Screen backdrop="full" place="home" fill>
       <View style={styles.brand}>
+        <Logo size={28} />
         <Text style={styles.wordmark} accessibilityRole="header">
           Pecking Order
         </Text>
@@ -213,8 +214,8 @@ function Intro({ busy, error, onGoogle }: { busy: boolean; error: string | null;
           {SLIDES.map((s) => (
             <View key={s.title} style={[styles.slideWrap, { width: width || 1 }]}>
               <View style={styles.slide}>
-                <Mascot mood={s.mood} size={128} />
-                <Txt variant="title" align="center">
+                <Mark icon={s.icon} size={96} />
+                <Txt variant="title" align="center" style={styles.slideTitle}>
                   {s.title}
                 </Txt>
                 <Txt color={colors.muted} align="center">
@@ -247,7 +248,7 @@ function Intro({ busy, error, onGoogle }: { busy: boolean; error: string | null;
         <View style={styles.actions}>
           <GoogleButton onPress={onGoogle} loading={busy} />
           <Txt variant="caption" color={colors.muted} align="center">
-            We only use your first name from Google. Your friends see the name and animal you pick.
+            We only use your first name from Google. Your friends see the name and emoji you pick.
           </Txt>
         </View>
       )}
@@ -256,14 +257,15 @@ function Intro({ busy, error, onGoogle }: { busy: boolean; error: string | null;
 }
 
 const styles = StyleSheet.create({
-  brand: { alignItems: "center", paddingTop: space(4) },
-  wordmark: { fontFamily: fonts.display, fontSize: 30, lineHeight: 36, color: colors.ink, textAlign: "center" },
-  welcome: { flex: 1, alignItems: "center", justifyContent: "center", gap: space(2), paddingTop: space(6) },
+  brand: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space(3), paddingTop: space(4) },
+  wordmark: { fontFamily: fonts.display, fontSize: 22, lineHeight: 28, letterSpacing: -0.4, color: colors.ink },
+  welcome: { flex: 1, alignItems: "center", justifyContent: "center", gap: space(5), paddingTop: space(6) },
   zone: { flexGrow: 1, justifyContent: "flex-end", gap: space(4), paddingBottom: space(4) },
   slideWrap: { paddingHorizontal: space(1) },
   slide: { alignItems: "center", gap: space(3), paddingVertical: space(6), paddingHorizontal: space(4) },
+  slideTitle: { marginTop: space(3) },
   dots: { flexDirection: "row", justifyContent: "center", gap: space(2) },
-  dot: { width: 10, height: 10, borderRadius: radius.pill, backgroundColor: colors.border },
-  dotOn: { width: 28, backgroundColor: colors.ink },
+  dot: { width: 8, height: 8, borderRadius: radius.pill, backgroundColor: colors.border },
+  dotOn: { width: 22, backgroundColor: colors.ink },
   actions: { gap: space(2) },
 });

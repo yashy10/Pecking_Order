@@ -10,7 +10,7 @@ export { Icon, type IconName } from "./icon";
 export { IconButton } from "./icon-button";
 export { List, ListRow } from "./list";
 export { Loading } from "./loading";
-export { Mascot, type Mood } from "./mascot";
+export { Logo, Mark } from "./mark";
 export { Ornament } from "./ornament";
 export { Pill } from "./pill";
 export { PlaceProvider, usePlace } from "./place";

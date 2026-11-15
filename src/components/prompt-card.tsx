@@ -42,7 +42,7 @@ export function PromptCard({ today }: { today: Today }) {
     <Card testID="prompt-card">
       <View style={styles.titleRow}>
         <Txt variant="overline" color={colors.muted} style={styles.grow}>
-          Question of the day
+          Today's question
         </Txt>
         <Pill label="+10 points" tone="primary" />
       </View>
@@ -53,7 +53,7 @@ export function PromptCard({ today }: { today: Today }) {
             testID="prompt-field"
             value={value}
             onChangeText={setDraft}
-            placeholder="Short and funny is best"
+            placeholder="Keep it short and funny"
             accessibilityLabel="Your answer"
             maxLength={140}
             multiline
@@ -64,7 +64,7 @@ export function PromptCard({ today }: { today: Today }) {
             </Txt>
           </View>
           {error ? <Txt color={colors.bad}>{error}</Txt> : null}
-          <Button label="Save my answer" onPress={submit} loading={busy} disabled={!value.trim()} />
+          <Button label="Save answer" onPress={submit} loading={busy} disabled={!value.trim()} />
         </>
       ) : (
         <>
@@ -74,7 +74,7 @@ export function PromptCard({ today }: { today: Today }) {
           <View style={styles.footer}>
             <Icon name="check" size={16} color={colors.good} />
             <Txt variant="caption" color={colors.muted} style={styles.grow}>
-              Saved for tomorrow's game!
+              Saved for tomorrow's game
             </Txt>
             <Button
               label="Edit"

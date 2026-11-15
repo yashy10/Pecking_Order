@@ -69,7 +69,7 @@ export function Screen({
               {title ?? ""}
             </Txt>
             {subtitle ? (
-              <Txt variant="caption" color={colors.ink} numberOfLines={1}>
+              <Txt variant="caption" color={colors.muted} numberOfLines={1}>
                 {subtitle}
               </Txt>
             ) : null}

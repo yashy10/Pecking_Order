@@ -5,7 +5,7 @@ import { Txt } from "./txt";
 export function Loading({ label }: { label?: string }) {
   return (
     <View style={styles.wrap}>
-      <ActivityIndicator color={colors.accent} />
+      <ActivityIndicator color={colors.ink} />
       {label ? <Txt color={colors.muted}>{label}</Txt> : null}
     </View>
   );

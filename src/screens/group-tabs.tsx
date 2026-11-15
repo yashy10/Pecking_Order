@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     minHeight: layout.tabBarHeight,
     backgroundColor: colors.surface,
-    borderTopWidth: 2,
+    borderTopWidth: 1,
     borderTopColor: colors.border,
   },
 });

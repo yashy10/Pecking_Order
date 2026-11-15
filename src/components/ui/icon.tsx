@@ -24,7 +24,13 @@ export type IconName =
   | "edit"
   | "info"
   | "sparkle"
-  | "hourglass";
+  | "hourglass"
+  | "play"
+  | "crown"
+  | "search"
+  | "chat"
+  | "moon"
+  | "key";
 
 type Props = { name: IconName; size?: number; color?: string; strokeWidth?: number };
 
@@ -128,6 +134,28 @@ function draw(name: IconName, s: Stroke, color: string) {
       );
     case "sparkle":
       return <Path d="M12 3.5l1.9 5.3 5.6 1.7-5.6 1.8L12 17.5l-1.9-5.2-5.6-1.8 5.6-1.7L12 3.5zM18.5 16l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" {...s} />;
+    case "play":
+      return <Path d="M8 5.5v13l10.5-6.5L8 5.5z" {...s} />;
+    case "crown":
+      return <Path d="M4 18.5h16M4.5 15.5l-1-8 5 3.5L12 5l3.5 6 5-3.5-1 8h-15z" {...s} />;
+    case "search":
+      return (
+        <>
+          <Circle cx={10.5} cy={10.5} r={6.5} {...s} />
+          <Path d="M15.5 15.5l5 5" {...s} />
+        </>
+      );
+    case "chat":
+      return <Path d="M4 6.5A2.5 2.5 0 016.5 4h11A2.5 2.5 0 0120 6.5v7a2.5 2.5 0 01-2.5 2.5H11l-4.5 4v-4A2.5 2.5 0 014 13.5v-7z" {...s} />;
+    case "moon":
+      return <Path d="M19.5 14.2A8 8 0 019.8 4.5a8 8 0 109.7 9.7z" {...s} />;
+    case "key":
+      return (
+        <>
+          <Circle cx={8} cy={15.5} r={4.5} {...s} />
+          <Path d="M11.3 12.2L20 3.5M16.5 7l3 3M14 9.5l2 2" {...s} />
+        </>
+      );
     case "hourglass":
       return (
         <>

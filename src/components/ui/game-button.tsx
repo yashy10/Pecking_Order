@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { colors, edgeShadow, radius, space } from "@/theme";
+import { colors, motion, radius, space } from "@/theme";
 import { tap } from "@/utils/haptics";
 import { Icon } from "./icon";
 import { usePlace } from "./place";
@@ -11,7 +11,7 @@ type Props = {
   overline: string;
   title: string;
   onPress: () => void;
-  /** brass: the main way forward, in the place's colour · glass: a white tile */
+  /** brass: the main way forward, filled with the place's colour · glass: a white tile */
   tone?: "brass" | "glass";
   /** Something to the left of the text: an emoji tile, a group mark. */
   leading?: ReactNode;
@@ -22,9 +22,7 @@ type Props = {
   accessibilityLabel?: string;
 };
 
-const DEPTH = 5;
-
-/** A big tappable tile: a small label, a title, and an arrow that says "this goes somewhere". */
+/** A tappable tile: a small label, a title, and a chevron that says "this goes somewhere". */
 export function GameButton({
   overline,
   title,
@@ -38,7 +36,6 @@ export function GameButton({
 }: Props) {
   const place = usePlace();
   const bright = tone === "brass" || selected;
-  const edge = bright ? place.edge : colors.edge;
   return (
     <Pressable
       testID={testID}
@@ -53,10 +50,7 @@ export function GameButton({
         styles.base,
         compact && styles.compact,
         bright ? { backgroundColor: place.fill, borderColor: place.fill } : styles.plain,
-        {
-          boxShadow: edgeShadow(edge, pressed ? 1 : DEPTH),
-          transform: [{ translateY: pressed ? DEPTH - 1 : 0 }],
-        },
+        pressed && styles.pressed,
       ]}
     >
       {leading}
@@ -69,9 +63,7 @@ export function GameButton({
         </Txt>
       </View>
       {compact ? null : (
-        <View style={[styles.chev, !bright && { backgroundColor: place.soft }]}>
-          <Icon name="chevron" size={18} color={colors.ink} strokeWidth={2.6} />
-        </View>
+        <Icon name="chevron" size={18} color={bright ? colors.ink : colors.muted} />
       )}
     </Pressable>
   );
@@ -82,22 +74,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space(3),
-    minHeight: 72,
+    minHeight: 68,
     paddingVertical: space(3),
     paddingHorizontal: space(4),
     borderRadius: radius.tile,
-    borderWidth: 2,
-    marginBottom: DEPTH,
+    borderWidth: 1.5,
   },
-  compact: { minHeight: 68, paddingHorizontal: space(3.5) },
+  compact: { minHeight: 64 },
   plain: { backgroundColor: colors.surface, borderColor: colors.border },
+  pressed: { opacity: 0.85, transform: [{ scale: motion.press }] },
   text: { flex: 1, gap: 1 },
-  chev: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.55)",
-  },
 });
