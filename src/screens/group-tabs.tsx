@@ -57,8 +57,8 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
     minHeight: layout.tabBarHeight,
-    backgroundColor: colors.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    backgroundColor: "rgba(8, 9, 12, 0.97)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(212, 175, 55, 0.14)",
   },
 });

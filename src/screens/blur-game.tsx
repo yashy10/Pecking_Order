@@ -150,10 +150,10 @@ export function BlurGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: I
           )}
           {!result ? (
             <View style={styles.pointsChip} accessibilityLiveRegion="polite" accessibilityLabel={`${livePoints} points available`}>
-              <Txt variant="heading" tabular color={colors.surface}>
+              <Txt variant="heading" tabular color={colors.accent}>
                 {livePoints}
               </Txt>
-              <Txt variant="caption" color={colors.fog}>
+              <Txt variant="caption" color={colors.muted}>
                 pts
               </Txt>
             </View>
@@ -256,7 +256,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space(3),
     paddingVertical: space(1),
     borderRadius: radius.pill,
-    backgroundColor: "rgba(31, 20, 16, 0.72)",
+    backgroundColor: "rgba(8, 9, 12, 0.78)",
+    borderWidth: 1,
+    borderColor: "rgba(212, 175, 55, 0.4)",
   },
   track: {
     width: "100%",

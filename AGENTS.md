@@ -62,10 +62,15 @@ validators in convex/ are the API contract: where the code and §6.7 differ, the
   another member's points, a sealed score, a Blur answer before the player finishes, a
   quote's author before the player submits, or a token.
 - Only convex/lib/auth.ts and convex/users.ts may read the `users` table.
-- UI uses src/components/ui (Screen, Txt, Button, Card, Field, Avatar, Pill, Loading) and
-  src/theme.ts. No new colours, fonts or UI libraries. Light mode only. It must work on iOS
-  and Android in Expo Go and on web: wrap every screen in `Screen` (it owns safe areas and the
-  keyboard), and do not use expo-symbols, expo-glass-effect, @expo/ui or `shadow*` styles.
+- UI uses src/components/ui (Screen, Txt, Button, GameButton, Card, Field, Avatar, Pill,
+  Loading, Backdrop) and src/theme.ts. The look is the dark "tabletop" theme in docs/PLAN.md
+  §6.8, chosen by the user: obsidian and brass, Cinzel and JetBrains Mono. Do not bring back
+  the old light theme, and add no colours, fonts or UI libraries outside src/theme.ts. QR codes
+  stay #111 on #FFF with a white quiet zone. Leave `userInterfaceStyle: "light"` in app.json:
+  changing it needs a new native build, and the app paints its own dark background anyway.
+  It must work on iOS and Android in Expo Go and on web: wrap every screen in `Screen` (it owns
+  safe areas, the keyboard and the backdrop), and do not use expo-symbols, expo-glass-effect,
+  @expo/ui or `shadow*` styles.
 - Import Convex code in the app as `@convex/_generated/api`. Typed routes are off, so route
   strings are plain strings.
 - Use Node 24 (`.nvmrc`). Convex's local backend refuses "use node" files on Node 23.

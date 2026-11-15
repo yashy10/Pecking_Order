@@ -34,6 +34,6 @@ export function IconButton({ icon, label, onPress, tone = "plain", color, testID
 
 const styles = StyleSheet.create({
   base: { width: 44, height: 44, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
-  tonal: { backgroundColor: colors.primarySoft },
-  pressed: { backgroundColor: colors.sunken, transform: [{ scale: motion.press }] },
+  tonal: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: "rgba(212, 175, 55, 0.35)" },
+  pressed: { backgroundColor: colors.raised, transform: [{ scale: motion.press }] },
 });

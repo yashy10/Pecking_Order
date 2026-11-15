@@ -37,6 +37,6 @@ export function ScreenSkeleton() {
 }
 
 const styles = StyleSheet.create({
-  block: { backgroundColor: colors.sunken },
+  block: { backgroundColor: colors.raised },
   screen: { gap: space(3), paddingTop: space(2) },
 });

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AETHER // Tabletop Mobile Backdrop</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Cinzel', 'serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            obsidian: '#08090C',
+            slateDeep: '#0E1117',
+            brass: '#D4AF37',
+            brassLight: '#F3D878',
+            terracotta: '#C85A32',
+            emeraldTable: '#1B5E48',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom micro-animations and tactile tabletop shaders */
+    body {
+      background-color: #040507;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* Subtle noise grain overlay for tactile matte felt / anodized metal finish */
+    .noise-overlay {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.045'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    /* Ambient slow breathing glow */
+    @keyframes ambientPulse {
+      0%, 100% { opacity: 0.45; transform: scale(1) translate(0, 0); }
+      50% { opacity: 0.72; transform: scale(1.06) translate(4px, -6px); }
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-7px) rotate(1.5deg); }
+    }
+
+    @keyframes floatReverse {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(6px) rotate(-1.5deg); }
+    }
+
+    @keyframes spinSubtle {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .animate-ambient {
+      animation: ambientPulse 9s ease-in-out infinite;
+    }
+
+    .animate-float-slow {
+      animation: floatSlow 7s ease-in-out infinite;
+    }
+
+    .animate-float-reverse {
+      animation: floatReverse 8.5s ease-in-out infinite;
+    }
+
+    .animate-spin-ultra-slow {
+      animation: spinSubtle 90s linear infinite;
+    }
+
+    /* Safe zone subtle dashed guide when previewing */
+    .safe-zone-border {
+      background-image: linear-gradient(to right, rgba(212, 175, 55, 0.25) 50%, transparent 50%),
+                        linear-gradient(to right, rgba(212, 175, 55, 0.25) 50%, transparent 50%),
+                        linear-gradient(to bottom, rgba(212, 175, 55, 0.25) 50%, transparent 50%),
+                        linear-gradient(to bottom, rgba(212, 175, 55, 0.25) 50%, transparent 50%);
+      background-position: left top, left bottom, left top, right top;
+      background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+      background-size: 12px 1px, 12px 1px, 1px 12px, 1px 12px;
+    }
+
+    /* Glassmorphic overlay button styling for preview */
+    .game-btn-primary {
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.06) 100%);
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(243, 216, 120, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .game-btn-primary:hover {
+      border-color: rgba(243, 216, 120, 0.8);
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.26) 0%, rgba(212, 175, 55, 0.10) 100%);
+      transform: translateY(-1px);
+    }
+    .game-btn-primary:active {
+      transform: scale(0.985);
+    }
+
+    .game-btn-secondary {
+      background: rgba(18, 22, 30, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .game-btn-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.22);
+      background: rgba(26, 32, 43, 0.78);
+    }
+    .game-btn-secondary:active {
+      transform: scale(0.985);
+    }
+  </style>
+</head>
+<body class="w-screen h-screen flex items-center justify-center bg-[#040507] text-slate-200 antialiased">
+
+  <!-- Desktop Outer Ambient Studio Backdrop (Hidden on mobile screens) -->
+  <div class="hidden sm:flex fixed inset-0 pointer-events-none items-center justify-center overflow-hidden">
+    <div class="w-[620px] h-[620px] rounded-full bg-brass/5 blur-[130px]"></div>
+    <div class="absolute top-6 left-8 flex items-center gap-2.5 text-xs font-mono tracking-widest uppercase text-slate-500">
+      <span class="w-2 h-2 rounded-full bg-brass/70 animate-pulse"></span>
+      <span>Mobile Viewport // 9:19.5 Backdrop</span>
+    </div>
+    <div class="absolute bottom-6 right-8 text-[11px] font-mono text-slate-600">
+      Move cursor or tilt device for parallax depth
+    </div>
+  </div>
+
+  <!-- Main Mobile Frame Container (Full-bleed on mobile, sleek bezel frame on tablet/desktop) -->
+  <main id="mobile-viewport"
+        class="relative w-full h-full sm:w-[390px] sm:h-[844px] sm:max-h-[92vh] sm:rounded-[44px] sm:border sm:border-white/10 sm:shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_0_1px_rgba(212,175,55,0.08)] overflow-hidden bg-obsidian flex flex-col justify-between">
+
+    <!-- LAYER 1: Deep Architectural Base & Ambient Lighting -->
+    <div class="absolute inset-0 bg-gradient-to-b from-[#0C0F15] via-[#08090C] to-[#06070A] pointer-events-none"></div>
+
+    <!-- Ambient Corner Glows (Positioned away from center safe zone) -->
+    <div id="glow-top" class="parallax-layer absolute -top-20 -right-16 w-72 h-72 rounded-full bg-brass/12 blur-[75px] animate-ambient pointer-events-none" data-depth="0.4"></div>
+    <div id="glow-bottom-left" class="parallax-layer absolute -bottom-24 -left-20 w-72 h-72 rounded-full bg-emeraldTable/20 blur-[80px] pointer-events-none" data-depth="0.3"></div>
+    <div id="glow-bottom-right" class="parallax-layer absolute bottom-12 -right-24 w-56 h-56 rounded-full bg-terracotta/12 blur-[70px] pointer-events-none" data-depth="0.5"></div>
+
+    <!-- LAYER 2: Interactive HTML5 Canvas for Subtle Architectural Grids & Floating Geometric Motifs -->
+    <canvas id="board-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+    <!-- LAYER 3: Crisp Vector Tabletop Architecture (SVG Motifs) -->
+    <svg id="vector-motifs" class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Brass Metallic Linear Gradient -->
+        <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#F3D878" stop-opacity="0.65" />
+          <stop offset="50%" stop-color="#D4AF37" stop-opacity="0.25" />
+          <stop offset="100%" stop-color="#8C6D1F" stop-opacity="0.05" />
+        </linearGradient>
+
+        <!-- Subtle Terracotta & Emerald Gradients -->
+        <linearGradient id="terracottaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#C85A32" stop-opacity="0.28" />
+          <stop offset="100%" stop-color="#C85A32" stop-opacity="0.02" />
+        </linearGradient>
+
+        <linearGradient id="emeraldGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stop-color="#1B5E48" stop-opacity="0.32" />
+          <stop offset="100%" stop-color="#1B5E48" stop-opacity="0.02" />
+        </linearGradient>
+
+        <!-- Radial Vignette Mask to guarantee crystal-clear negative space in center/lower-middle -->
+        <radialGradient id="centerClearMask" cx="50%" cy="56%" r="52%">
+          <stop offset="0%" stop-color="black" stop-opacity="1" />
+          <stop offset="58%" stop-color="black" stop-opacity="0.92" />
+          <stop offset="85%" stop-color="white" stop-opacity="0.65" />
+          <stop offset="100%" stop-color="white" stop-opacity="1" />
+        </radialGradient>
+
+        <mask id="safeZoneMask">
+          <rect width="390" height="844" fill="white" />
+          <!-- Soft dark ellipse over center & lower-middle button zone -->
+          <ellipse cx="195" cy="495" rx="165" ry="225" fill="url(#centerClearMask)" />
+        </mask>
+
+        <!-- Go Stone Drop Shadow -->
+        <filter id="stoneShadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.65" />
+        </filter>
+      </defs>
+
+      <!-- Masked Perimeter Architecture Group (Keeps center clean) -->
+      <g mask="url(#safeZoneMask)">
+
+        <!-- 1. TOP-LEFT: Minimalist Chess Grid & Knight/Crown Geometric Abstraction -->
+        <g class="parallax-svg" data-depth="0.6" opacity="0.75">
+          <!-- Perspective Chess Tiles -->
+          <g transform="translate(-18, 28) rotate(-12)">
+            <rect x="0" y="0" width="36" height="36" fill="none" stroke="url(#brassGrad)" stroke-width="0.75" />
+            <rect x="36" y="0" width="36" height="36" fill="rgba(212,175,55,0.06)" stroke="url(#brassGrad)" stroke-width="0.75" />
+            <rect x="72" y="0" width="36" height="36" fill="none" stroke="url(#brassGrad)" stroke-width="0.75" />
+            <rect x="0" y="36" width="36" height="36" fill="rgba(212,175,55,0.05)" stroke="url(#brassGrad)" stroke-width="0.75" />
+            <rect x="36" y="36" width="36" height="36" fill="none" stroke="url(#brassGrad)" stroke-width="0.75" />
+            <rect x="72" y="36" width="36" height="36" fill="rgba(212,175,55,0.08)" stroke="url(#brassGrad)" stroke-width="0.75" />
+            <rect x="36" y="72" width="36" height="36" fill="rgba(212,175,55,0.04)" stroke="url(#brassGrad)" stroke-width="0.75" />
+            <!-- Minimalist Chess Crown / Rook Notch inside tile -->
+            <path d="M47 48 L54 43 L61 48 L59 58 L49 58 Z" fill="none" stroke="#F3D878" stroke-width="1" stroke-opacity="0.55" />
+          </g>
+        </g>
+
+        <!-- 2. TOP-RIGHT: Go (Weiqi) Goban Intersections & Tactile Black/White Stones -->
+        <g class="parallax-svg" data-depth="0.9">
+          <g transform="translate(245, 58)">
+            <!-- Goban Grid Lines -->
+            <line x1="0" y1="24" x2="140" y2="24" stroke="rgba(255,255,255,0.09)" stroke-width="0.8" />
+            <line x1="0" y1="60" x2="140" y2="60" stroke="rgba(255,255,255,0.09)" stroke-width="0.8" />
+            <line x1="0" y1="96" x2="140" y2="96" stroke="rgba(255,255,255,0.09)" stroke-width="0.8" />
+            <line x1="0" y1="132" x2="140" y2="132" stroke="rgba(255,255,255,0.06)" stroke-width="0.8" />
+
+            <line x1="28" y1="0" x2="28" y2="155" stroke="rgba(255,255,255,0.09)" stroke-width="0.8" />
+            <line x1="64" y1="0" x2="64" y2="155" stroke="rgba(255,255,255,0.09)" stroke-width="0.8" />
+            <line x1="100" y1="0" x2="100" y2="155" stroke="rgba(255,255,255,0.09)" stroke-width="0.8" />
+
+            <!-- Hoshi (Star Point) -->
+            <circle cx="64" cy="60" r="2.2" fill="#D4AF37" fill-opacity="0.65" />
+
+            <!-- Obsidian Go Stone -->
+            <g filter="url(#stoneShadow)" class="animate-float-slow">
+              <circle cx="28" cy="60" r="12.5" fill="#11141C" stroke="rgba(255,255,255,0.18)" stroke-width="0.8" />
+              <path d="M21 54 A 9 9 0 0 1 33 52" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" stroke-linecap="round" />
+            </g>
+
+            <!-- Warm Ivory/Brass-rimmed Go Stone -->
+            <g filter="url(#stoneShadow)" class="animate-float-reverse">
+              <circle cx="100" cy="96" r="12.5" fill="#E6DFD3" stroke="#D4AF37" stroke-width="0.9" stroke-opacity="0.6" />
+              <circle cx="96" cy="92" r="4" fill="#FFFFFF" fill-opacity="0.55" />
+            </g>
+
+            <!-- Ghost Placement Ring (Next Move Indicator) -->
+            <circle cx="64" cy="24" r="11.5" fill="none" stroke="#D4AF37" stroke-width="0.9" stroke-dasharray="2.5 2.5" stroke-opacity="0.55" />
+          </g>
+        </g>
+
+        <!-- 3. MID-UPPER: Catan-Style Hexagonal Tessellation & Settlement Node -->
+        <g class="parallax-svg" data-depth="0.45" opacity="0.8">
+          <g transform="translate(36, 178)">
+            <!-- Hex 1 -->
+            <polygon points="32,0 60,16 60,48 32,64 4,48 4,16" fill="rgba(27,94,72,0.08)" stroke="url(#brassGrad)" stroke-width="0.85" />
+            <!-- Hex 2 (Adjacent) -->
+            <polygon points="88,0 116,16 116,48 88,64 60,48 60,16" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.75" />
+            <!-- Hex 3 (Below) -->
+            <polygon points="60,48 88,64 88,96 60,112 32,96 32,64" fill="rgba(212,175,55,0.04)" stroke="url(#brassGrad)" stroke-width="0.85" />
+            <!-- Road & Vertex Node -->
+            <line x1="60" y1="16" x2="60" y2="48" stroke="#D4AF37" stroke-width="1.8" stroke-opacity="0.55" stroke-linecap="round" />
+            <circle cx="60" cy="48" r="3.5" fill="#08090C" stroke="#F3D878" stroke-width="1.3" />
+          </g>
+        </g>
+
+        <!-- 4. LOWER-LEFT & LOWER-RIGHT: Backgammon Architectural Triangular Points -->
+        <g class="parallax-svg" data-depth="0.75">
+          <!-- Bottom-Left Backgammon Points rising from edge -->
+          <g transform="translate(14, 675)">
+            <polygon points="0,170 18,45 36,170" fill="url(#terracottaGrad)" stroke="rgba(200,90,50,0.28)" stroke-width="0.7" />
+            <polygon points="36,170 54,65 72,170" fill="url(#emeraldGrad)" stroke="rgba(27,94,72,0.3)" stroke-width="0.7" />
+            <polygon points="72,170 90,52 108,170" fill="url(#terracottaGrad)" stroke="rgba(200,90,50,0.22)" stroke-width="0.7" />
+            <!-- Minimalist Checker Disc at tip -->
+            <circle cx="18" cy="34" r="7.5" fill="#12151E" stroke="#C85A32" stroke-width="1" stroke-opacity="0.65" />
+            <circle cx="18" cy="34" r="3.5" fill="none" stroke="#C85A32" stroke-width="0.6" stroke-opacity="0.45" />
+          </g>
+
+          <!-- Bottom-Right Isometric Polyhedral Dice (D20 / D6 Wireframe) -->
+          <g transform="translate(278, 690)" class="animate-float-slow">
+            <!-- Outer Hexagon of Isometric Cube/Die -->
+            <polygon points="42,6 76,26 76,66 42,86 8,66 8,26" fill="rgba(14,17,23,0.75)" stroke="url(#brassGrad)" stroke-width="1" />
+            <!-- Inner Cube Edges -->
+            <polyline points="8,26 42,46 76,26" fill="none" stroke="rgba(212,175,55,0.4)" stroke-width="0.85" />
+            <line x1="42" y1="46" x2="42" y2="86" stroke="rgba(212,175,55,0.4)" stroke-width="0.85" />
+            <!-- Minimalist Pips -->
+            <circle cx="42" cy="25" r="2.2" fill="#F3D878" fill-opacity="0.75" />
+            <circle cx="24" cy="48" r="1.8" fill="#D4AF37" fill-opacity="0.55" />
+            <circle cx="24" cy="61" r="1.8" fill="#D4AF37" fill-opacity="0.55" />
+            <circle cx="59" cy="54" r="2" fill="#C85A32" fill-opacity="0.8" />
+          </g>
+        </g>
+
+      </g>
+
+      <!-- LAYER 4: Ultra-fine Architectural Framing & Compass Ring (Unmasked, subtle framing) -->
+      <g opacity="0.55">
+        <!-- Corner Precision Hairlines -->
+        <path d="M 24 44 L 24 24 L 44 24" fill="none" stroke="#D4AF37" stroke-width="0.9" stroke-opacity="0.45" />
+        <path d="M 366 44 L 366 24 L 346 24" fill="none" stroke="#D4AF37" stroke-width="0.9" stroke-opacity="0.45" />
+        <path d="M 24 800 L 24 820 L 44 820" fill="none" stroke="#D4AF37" stroke-width="0.9" stroke-opacity="0.45" />
+        <path d="M 366 800 L 366 820 L 346 820" fill="none" stroke="#D4AF37" stroke-width="0.9" stroke-opacity="0.45" />
+
+        <!-- Subtle Center Astrolabe / Turn-Order Arc behind Hero Title Area -->
+        <circle cx="195" cy="255" r="118" fill="none" stroke="rgba(212,175,55,0.08)" stroke-width="0.75" stroke-dasharray="3 6" />
+        <circle cx="195" cy="255" r="142" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="0.6" />
+      </g>
+    </svg>
+
+    <!-- LAYER 5: Tactile Grain Texture -->
+    <div class="absolute inset-0 noise-overlay"></div>
+
+    <!-- LAYER 6: Minimalist Top Brand Header (Framing the upper sky without clutter) -->
+    <header class="relative z-10 pt-12 sm:pt-14 px-7 flex flex-col items-center text-center pointer-events-none">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-brass/20 backdrop-blur-md mb-4">
+        <span class="w-1.5 h-1.5 rounded-full bg-brass"></span>
+        <span class="text-[10px] font-mono tracking-[0.24em] uppercase text-brassLight/80">Tabletop // Edition I</span>
+      </div>
+
+      <h1 class="font-serif text-3xl sm:text-[34px] font-semibold tracking-[0.18em] text-slate-100 drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
+        AETHERIA
+      </h1>
+      <div class="mt-2.5 flex items-center gap-3 opacity-60">
+        <span class="h-[1px] w-8 bg-gradient-to-r from-transparent to-brass"></span>
+        <span class="w-1.5 h-1.5 rotate-45 border border-brass"></span>
+        <span class="h-[1px] w-8 bg-gradient-to-l from-transparent to-brass"></span>
+      </div>
+    </header>
+
+    <!-- LAYER 7: CENTER & LOWER-MIDDLE OVERLAY ZONE (Pure negative space by default; toggleable button preview) -->
+    <section class="relative z-10 flex-1 flex flex-col justify-end px-7 pb-10">
+
+      <!-- Optional Safe-Zone Blueprint Guide (Visible only when preview toggle is active) -->
+      <div id="overlay-preview-container"
+           class="w-full transition-all duration-300 ease-out opacity-0 translate-y-2 pointer-events-none">
+
+        <div class="safe-zone-border rounded-2xl p-4 bg-obsidian/35 backdrop-blur-[2px]">
+          <div class="flex items-center justify-between mb-3 px-1">
+            <span class="text-[10px] font-mono uppercase tracking-widest text-brass/80">Button Overlay Safe Zone</span>
+            <span class="text-[10px] font-mono text-slate-500">44px+ Touch Targets</span>
+          </div>
+
+          <!-- Sample Overlaid Buttons showing high legibility & visual harmony -->
+          <div class="flex flex-col gap-3">
+            <button type="button" class="game-btn-primary w-full py-3.5 px-5 rounded-xl flex items-center justify-between text-left group">
+              <div>
+                <div class="text-xs font-mono uppercase tracking-widest text-brassLight/80">Quick Match</div>
+                <div class="text-base font-medium text-white tracking-wide">Enter Ranked Table</div>
+              </div>
+              <span class="w-8 h-8 rounded-lg bg-brass/15 border border-brass/30 flex items-center justify-center text-brassLight group-hover:translate-x-0.5 transition-transform">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+              </span>
+            </button>
+
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" class="game-btn-secondary py-3 px-4 rounded-xl flex flex-col items-start">
+                <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Solo</span>
+                <span class="text-sm font-medium text-slate-100 mt-0.5">Campaign</span>
+              </button>
+              <button type="button" class="game-btn-secondary py-3 px-4 rounded-xl flex flex-col items-start">
+                <span class="text-[10px] font-mono uppercase tracking-wider text-slate-400">Pass & Play</span>
+                <span class="text-sm font-medium text-slate-100 mt-0.5">Local Board</span>
+              </button>
+            </div>
+
+            <button type="button" class="game-btn-secondary w-full py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-xs font-medium tracking-wider uppercase text-slate-300">
+              <span>Collection & Boards</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subtle Minimalist Footer Anchor + Discrete Preview Switch -->
+      <div class="mt-6 pt-3 flex items-center justify-between border-t border-white/[0.06]">
+        <div class="flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase text-slate-500">
+          <span class="inline-block w-1.5 h-1.5 rounded-full bg-emeraldTable"></span>
+          <span>Ready for UI Layer</span>
+        </div>
+
+        <!-- Discrete Toggle Button to Preview Overlaid Buttons -->
+        <button id="toggle-overlay-btn"
+                type="button"
+                aria-pressed="false"
+                class="pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-brass/40 text-[11px] font-mono text-slate-300 transition-all active:scale-95">
+          <span id="toggle-dot" class="w-2 h-2 rounded-full bg-slate-500 transition-colors"></span>
+          <span id="toggle-label">Preview Buttons</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Bottom Mobile Home Indicator Bar -->
+    <div class="relative z-10 pb-2 flex justify-center pointer-events-none">
+      <div class="w-32 h-1 rounded-full bg-white/15"></div>
+    </div>
+
+  </main>
+
+  <script>
+    /**
+     * AETHERIA // Minimalist Tabletop Backdrop Engine
+     * Renders an ambient, low-frequency architectural grid & gentle floating geometric
+     * game tokens on HTML5 Canvas while preserving a clean negative-space center.
+     */
+    (function () {
+      const canvas = document.getElementById('board-canvas');
+      const ctx = canvas.getContext('2d');
+      const container = document.getElementById('mobile-viewport');
+      const toggleBtn = document.getElementById('toggle-overlay-btn');
+      const toggleDot = document.getElementById('toggle-dot');
+      const toggleLabel = document.getElementById('toggle-label');
+      const previewContainer = document.getElementById('overlay-preview-container');
+
+      let width = 0;
+      let height = 0;
+      let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      // Smooth pointer / tilt parallax state
+      const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 };
+
+      // Toggleable Overlay Preview State (Default: false -> pure background)
+      let showOverlayPreview = false;
+
+      toggleBtn.addEventListener('click', () => {
+        showOverlayPreview = !showOverlayPreview;
+        toggleBtn.setAttribute('aria-pressed', String(showOverlayPreview));
+
+        if (showOverlayPreview) {
+          previewContainer.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none');
+          previewContainer.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+          toggleDot.classList.remove('bg-slate-500');
+          toggleDot.classList.add('bg-brass', 'shadow-[0_0_8px_#D4AF37]');
+          toggleLabel.textContent = 'Hide Buttons';
+        } else {
+          previewContainer.classList.add('opacity-0', 'translate-y-2', 'pointer-events-none');
+          previewContainer.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+          toggleDot.classList.add('bg-slate-500');
+          toggleDot.classList.remove('bg-brass', 'shadow-[0_0_8px_#D4AF37]');
+          toggleLabel.textContent = 'Preview Buttons';
+        }
+      });
+
+      // Ambient floating geometric motes (restricted to outer edges so center stays pure)
+      const motes = [];
+      const MOTE_COUNT = 16;
+
+      function initMotes() {
+        motes.length = 0;
+        for (let i = 0; i < MOTE_COUNT; i++) {
+          // Bias placement toward perimeter bands
+          const isLeft = i % 2 === 0;
+          const xNorm = isLeft
+            ? Math.random() * 0.28
+            : 0.72 + Math.random() * 0.28;
+          const yNorm = Math.random();
+
+          motes.push({
+            xNorm,
+            yNorm,
+            size: 2.5 + Math.random() * 4.5,
+            type: i % 3 === 0 ? 'diamond' : i % 3 === 1 ? 'hex' : 'ring',
+            speedY: (Math.random() - 0.5) * 0.00018,
+            phase: Math.random() * Math.PI * 2,
+            alpha: 0.12 + Math.random() * 0.22,
+            depth: 0.3 + Math.random() * 0.7
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        const rect = container.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      // Pointer & DeviceOrientation parallax listeners
+      window.addEventListener('mousemove', (e) => {
+        const nx = (e.clientX / window.innerWidth) * 2 - 1;
+        const ny = (e.clientY / window.innerHeight) * 2 - 1;
+        pointer.targetX = nx;
+        pointer.targetY = ny;
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+          const t = e.touches[0];
+          pointer.targetX = (t.clientX / window.innerWidth) * 2 - 1;
+          pointer.targetY = (t.clientY / window.innerHeight) * 2 - 1;
+        }
+      }, { passive: true });
+
+      window.addEventListener('deviceorientation', (e) => {
+        if (e.gamma !== null && e.beta !== null) {
+          pointer.targetX = Math.max(-1, Math.min(1, e.gamma / 25));
+          pointer.targetY = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
+        }
+      }, { passive: true });
+
+      function updateSVGParallax() {
+        const svgLayers = document.querySelectorAll('.parallax-svg');
+        svgLayers.forEach((el) => {
+          const depth = parseFloat(el.getAttribute('data-depth') || '0.5');
+          const tx = pointer.x * 11 * depth;
+          const ty = pointer.y * 11 * depth;
+          el.style.transform = `translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0)`;
+        });
+      }
+
+      function drawSubtleGobanGrid() {
+        // Ultra-faint architectural dot-grid with a radial fade out in the center
+        const spacing = 36;
+        const cols = Math.ceil(width / spacing);
+        const rows = Math.ceil(height / spacing);
+        const centerX = width * 0.5;
+        const centerY = height * 0.56;
+
+        for (let r = 1; r < rows; r++) {
+          for (let c = 1; c < cols; c++) {
+            const x = c * spacing + pointer.x * 3;
+            const y = r * spacing + pointer.y * 3;
+
+            // Distance from center safe-zone
+            const dx = (x - centerX) / (width * 0.45);
+            const dy = (y - centerY) / (height * 0.34);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 0.72) continue; // Keep center pure negative space
+
+            const edgeAlpha = Math.min(0.14, (dist - 0.72) * 0.16);
+            ctx.fillStyle = `rgba(212, 175, 55, ${edgeAlpha.toFixed(3)})`;
+            ctx.fillRect(x - 0.6, y - 0.6, 1.2, 1.2);
+          }
+        }
+      }
+
+      function drawMotes(time) {
+        motes.forEach((m) => {
+          m.yNorm += m.speedY;
+          if (m.yNorm < 0.04) m.yNorm = 0.96;
+          if (m.yNorm > 0.96) m.yNorm = 0.04;
+
+          const x = m.xNorm * width + pointer.x * 14 * m.depth;
+          const y = m.yNorm * height + Math.sin(time * 0.001 + m.phase) * 5 + pointer.y * 14 * m.depth;
+
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(time * 0.00025 + m.phase);
+          ctx.strokeStyle = `rgba(212, 175, 55, ${m.alpha})`;
+          ctx.lineWidth = 0.85;
+
+          if (m.type === 'diamond') {
+            ctx.beginPath();
+            ctx.moveTo(0, -m.size);
+            ctx.lineTo(m.size, 0);
+            ctx.lineTo(0, m.size);
+            ctx.lineTo(-m.size, 0);
+            ctx.closePath();
+            ctx.stroke();
+          } else if (m.type === 'hex') {
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+              const angle = (Math.PI / 3) * i;
+              const px = Math.cos(angle) * m.size;
+              const py = Math.sin(angle) * m.size;
+              if (i === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.stroke();
+          } else {
+            ctx.beginPath();
+            ctx.arc(0, 0, m.size * 0.8, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          ctx.restore();
+        });
+      }
+
+      function animate(time) {
+        // Smooth damping for parallax
+        pointer.x += (pointer.targetX - pointer.x) * 0.06;
+        pointer.y += (pointer.targetY - pointer.y) * 0.06;
+
+        ctx.clearRect(0, 0, width, height);
+        drawSubtleGobanGrid();
+        drawMotes(time);
+        updateSVGParallax();
+
+        requestAnimationFrame(animate);
+      }
+
+      window.addEventListener('resize', resizeCanvas);
+
+      window.onload = function () {
+        resizeCanvas();
+        initMotes();
+        requestAnimationFrame(animate);
+      };
+    })();
+  </script>
+</body>
+</html>

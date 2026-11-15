@@ -128,7 +128,7 @@ export function DemoPanel() {
                 {state.name}
               </Txt>
               <View style={styles.qr}>
-                <QRCode value={url} size={340} color={colors.ink} backgroundColor={colors.surface} />
+                <QRCode value={url} size={340} color="#111111" backgroundColor="#FFFFFF" />
               </View>
               <Txt variant="display" style={styles.code}>
                 {state.inviteCode}
@@ -390,7 +390,8 @@ const styles = StyleSheet.create({
   columns: { flexDirection: "row", flexWrap: "wrap", gap: space(5) },
   col: { flexGrow: 1, flexBasis: 360, gap: space(4) },
   center: { alignItems: "center", gap: space(2), paddingVertical: space(6) },
-  qr: { padding: space(3), backgroundColor: colors.surface, marginVertical: space(2) },
+  // Dark modules on white, always: inverted QR codes fail on some phone cameras.
+  qr: { padding: space(4), backgroundColor: "#FFFFFF", borderRadius: radius.tile, marginVertical: space(2) },
   code: { letterSpacing: 10, marginRight: -10 },
   row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space(2) },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space(2) },

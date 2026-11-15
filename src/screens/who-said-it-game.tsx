@@ -136,7 +136,7 @@ export function WhoSaidItGame({ groupId, gameId }: { groupId: Id<"groups">; game
               style={({ pressed }) => [styles.chip, selected && styles.chipOn, pressed && styles.chipPressed]}
             >
               <Avatar emoji={o.emoji} size={36} />
-              <Txt variant="heading" numberOfLines={1} style={styles.chipName} color={selected ? colors.primary : colors.ink}>
+              <Txt variant="heading" numberOfLines={1} style={styles.chipName} color={selected ? colors.accent : colors.ink}>
                 {o.name}
               </Txt>
             </Pressable>
@@ -230,8 +230,8 @@ const styles = StyleSheet.create({
     minHeight: 60,
     borderRadius: radius.tile,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: "rgba(255, 255, 255, 0.09)",
+    backgroundColor: "rgba(18, 22, 30, 0.82)",
   },
   chipOn: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
   chipPressed: { transform: [{ scale: 0.98 }] },

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, layout, space } from "@/theme";
+import { Backdrop } from "./backdrop";
 import { IconButton } from "./icon-button";
 import { Txt } from "./txt";
 
@@ -22,16 +23,33 @@ type Props = {
   wide?: boolean; // the demo panel on a projector; every player screen stays narrow
   /** Inside the group tabs: the tab bar below owns the bottom safe area. */
   tabbed?: boolean;
+  /** The table behind the screen: "full" for home and join, "subtle" (default) elsewhere. */
+  backdrop?: "full" | "subtle" | "none";
+  /** Let the content column fill the screen height, so a screen can pin blocks to the top and bottom. */
+  fill?: boolean;
 };
 
-export function Screen({ children, title, subtitle, back, backTo = "/", right, scroll = true, wide, tabbed }: Props) {
+export function Screen({
+  children,
+  title,
+  subtitle,
+  back,
+  backTo = "/",
+  right,
+  scroll = true,
+  wide,
+  tabbed,
+  backdrop = "subtle",
+  fill,
+}: Props) {
   const insets = useSafeAreaInsets();
   const showHeader = Boolean(title || back || right);
   const width = wide ? styles.wide : null;
-  const column = <View style={[styles.column, width]}>{children}</View>;
+  const column = <View style={[styles.column, width, fill && styles.fill]}>{children}</View>;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: tabbed ? 0 : insets.bottom }]}>
+      {backdrop !== "none" ? <Backdrop variant={backdrop} /> : null}
       {showHeader ? (
         <View style={[styles.header, width, back && styles.headerWithBack]}>
           {back ? (
@@ -94,4 +112,5 @@ const styles = StyleSheet.create({
   scrollTabbed: { paddingBottom: space(6) },
   column: { width: "100%", maxWidth: layout.maxWidth, alignSelf: "center", gap: space(5) },
   wide: { maxWidth: 1040 },
+  fill: { flexGrow: 1 },
 });

@@ -7,7 +7,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Button, Card, Screen, ScreenSkeleton, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, space } from "@/theme";
+import { colors, radius, space } from "@/theme";
 import * as haptics from "@/utils/haptics";
 import { joinUrl } from "@/utils/links";
 
@@ -56,7 +56,7 @@ export function Invite({ groupId }: { groupId: Id<"groups"> }) {
           Point a phone camera here to join
         </Txt>
         <View style={styles.qr} accessible accessibilityLabel={`QR code for ${url}`}>
-          <QRCode value={url} size={232} color={colors.ink} backgroundColor={colors.surface} />
+          <QRCode value={url} size={232} color="#111111" backgroundColor="#FFFFFF" />
         </View>
         <Txt variant="caption" color={colors.muted}>
           Or enter the code
@@ -87,7 +87,8 @@ export function Invite({ groupId }: { groupId: Id<"groups"> }) {
 
 const styles = StyleSheet.create({
   center: { alignItems: "center", gap: space(2), paddingVertical: space(6) },
-  qr: { padding: space(3), backgroundColor: colors.surface, marginVertical: space(2) },
+  // Dark modules on white, always: inverted QR codes fail on some phone cameras.
+  qr: { padding: space(4), backgroundColor: "#FFFFFF", borderRadius: radius.tile, marginVertical: space(2) },
   code: { letterSpacing: 8, marginRight: -8 },
   actions: { flexDirection: "row", gap: space(2) },
   grow: { flex: 1 },

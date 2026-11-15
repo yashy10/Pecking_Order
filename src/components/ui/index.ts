@@ -1,13 +1,16 @@
 // Owned by the lead. The only UI building blocks tracks use.
 export { Avatar } from "./avatar";
+export { Backdrop } from "./backdrop";
 export { Button } from "./button";
 export { Card } from "./card";
 export { EmptyState } from "./empty-state";
 export { Field } from "./field";
+export { GameButton } from "./game-button";
 export { Icon, type IconName } from "./icon";
 export { IconButton } from "./icon-button";
 export { List, ListRow } from "./list";
 export { Loading } from "./loading";
+export { Ornament } from "./ornament";
 export { Pill } from "./pill";
 export { Screen } from "./screen";
 export { Section } from "./section";

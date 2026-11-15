@@ -45,3 +45,6 @@ example
 # Local tooling
 .playwright-mcp/
 .env.eas-simulator
+
+# Playwright MCP screenshots and logs
+.playwright-mcp/

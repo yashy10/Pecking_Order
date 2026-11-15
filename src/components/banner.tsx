@@ -7,7 +7,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Icon, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, radius, space } from "@/theme";
+import { colors, elevation, glass, radius, space } from "@/theme";
 import * as haptics from "@/utils/haptics";
 import { getItem, setItem } from "@/utils/storage";
 
@@ -66,7 +66,7 @@ export function Banner({ groupId }: { groupId: Id<"groups"> }) {
     <Animated.View entering={FadeInDown.springify()} exiting={FadeOut} key={newestId}>
       <View style={styles.card} testID="banner" accessibilityLiveRegion="polite">
         <View style={styles.head}>
-          <Txt variant="overline" color={colors.fog} style={styles.grow}>
+          <Txt variant="overline" color={colors.accent} style={styles.grow}>
             Since the last reveal
           </Txt>
           <Pressable
@@ -76,7 +76,7 @@ export function Banner({ groupId }: { groupId: Id<"groups"> }) {
             onPress={dismiss}
             style={({ pressed }) => [styles.close, pressed && styles.closePressed]}
           >
-            <Icon name="close" size={16} color={colors.surface} />
+            <Icon name="close" size={16} color={colors.ink} />
           </Pressable>
         </View>
         {unseen.map((e) => (
@@ -101,7 +101,11 @@ function unseenEvents(events: Event[] | undefined, seen: string | null | undefin
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.ink,
+    backgroundColor: glass.panelStrong,
+    backgroundImage: glass.brassFill,
+    borderWidth: 1,
+    borderColor: glass.brassEdge,
+    boxShadow: elevation.raised,
     borderRadius: radius.card,
     padding: space(4),
     paddingTop: space(3),
@@ -120,5 +124,5 @@ const styles = StyleSheet.create({
   closePressed: { backgroundColor: "rgba(255, 255, 255, 0.24)" },
   row: { flexDirection: "row", alignItems: "center", gap: space(3) },
   icon: { fontSize: 22 },
-  text: { flex: 1, color: colors.surface },
+  text: { flex: 1, color: colors.ink },
 });

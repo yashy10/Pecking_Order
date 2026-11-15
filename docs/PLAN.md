@@ -460,16 +460,18 @@ memory.remember, memory.squawk                                    internal actio
 
 ### 6.8 Look and feel
 
-Four agents will each invent a design unless the system is fixed first. Phase 0 fixes it.
+Four agents will each invent a design unless the system is fixed first. Phase 0 fixed a light, cream look. On hackathon day the user replaced it with the dark "tabletop" theme from `docs/design/board_game_mobile_backdrop.html`. `src/theme.ts` is the source of truth.
 
-- **Light mode only** (`userInterfaceStyle: "light"`).
-- **Colours:** background `#FFF8ED` (cream), surface `#FFFFFF`, ink `#1F1410`, muted `#6F5F54`, primary `#C2410C` (the burnt orange from your PDFs), primaryDeep `#A8380A` (small text on soft orange), accent `#F5B700` (yolk), good `#157A45`, bad `#C01F35`, fog `#D9D2C7`, border `#EADFCF`. Every text pairing is at least 4.5:1 (WCAG AA) since the refinement pass; `src/theme.ts` is the source of truth, including the soft tints.
-- **Type:** system font. Display 40/800, title 24/800, body 17/500, caption 13/600.
-- **Shape:** cards radius 20, pills fully round, 4-point spacing grid, 16 px screen gutter.
-- **People:** emoji in a 44 px circle on the accent colour.
-- **Motion and touch:** Reanimated springs for reveals. Haptics on a correct guess, a reveal and a power.
+- **Dark by design.** The app paints its own obsidian background on every platform, and the status bar is light. `app.json` keeps `userInterfaceStyle: "light"`, because changing it needs a new native build.
+- **Colours:** background `#08090C` (obsidian), surface `#11151D`, raised `#171C26`, sunken `#0B0E13`, ink `#ECEEF2`, muted `#98A1B0`, primary `#D4AF37` (brass) with primaryInk `#17120A` on it, accent `#F3D878` (light brass), good `#5CC497` (emerald), bad `#E58263` (terracotta), fog `#262C37`, border `#222834`. Panels are translucent `glass` over the backdrop. Every text pairing clears WCAG AA. Body text is above 14:1; the lowest pairing, muted on fog, is 5.4:1.
+- **Type:** Cinzel Bold for display (32) and Cinzel SemiBold for titles (21). Overlines use JetBrains Mono at 11 in capitals. All three are bundled in `assets/fonts` under the OFL and loaded in the root layout. Everything else is the system font: heading 17/600, body 16/400, label 15/600, caption 13/500.
+- **Backdrop:** `Backdrop` draws the table in react-native-svg and Reanimated: a dot grid, glows, and pieces from five board games around the edges, with the centre kept clear. It is `full` on home and join and `subtle` everywhere else. Each instance gets its own SVG ids, because on the web stacked screens stay mounted and ids are global to the page.
+- **Shape:** cards radius 18, fields and buttons radius 12, tiles radius 14, 4-point spacing grid, 16 px screen gutter.
+- **People:** emoji on a dark token with a brass rim. The Season Pass adds a glowing brass ring.
+- **QR codes:** always `#111` on `#FFF` with a white quiet zone. Inverted codes fail on some phone cameras.
+- **Motion and touch:** Reanimated springs for reveals. The backdrop's glow breathes and two pieces float, both off when the player asks for reduced motion. Haptics on a correct guess, a reveal and a power.
 - **Web:** content column capped at 480 px and centred, so it reads as a phone app on a laptop.
-- **Primitives:** `Screen`, `Txt`, `Button`, `Card`, `Avatar`, `Pill`. Tracks use these and `src/theme.ts` and add no colours, fonts or UI libraries. Plain `StyleSheet`, as in your stack doc.
+- **Primitives:** `Screen`, `Txt`, `Button`, `GameButton`, `Card`, `Field`, `Avatar`, `Pill`, `Backdrop`, `Ornament`. Screens use these and `src/theme.ts` and add no colours, fonts or UI libraries. Plain `StyleSheet`, as in your stack doc.
 
 ### 6.9 iPhone and Android
 
@@ -815,8 +817,8 @@ The Expo template generates `AGENTS.md` and `CLAUDE.md`. Append this section.
 - The hidden-board rules in docs/PLAN.md §6.1 are hard requirements. Never return a rank,
   another member's points, a sealed score, a Blur answer, a quote's author or a token.
 - Only convex/lib/auth.ts and convex/users.ts may read the `users` table.
-- UI uses src/components/ui and src/theme.ts. No new colours, fonts or UI libraries. Light mode
-  only. It must work on iOS and Android in Expo Go and on web: wrap every screen in `Screen`
+- UI uses src/components/ui and src/theme.ts. No new colours, fonts or UI libraries. The look is
+  the dark tabletop theme in §6.8. It must work on iOS and Android in Expo Go and on web: wrap every screen in `Screen`
   (it owns safe areas and the keyboard), and do not use expo-symbols, expo-glass-effect,
   @expo/ui or `shadow*` style props.
 - Never deploy to the shared Convex deployment and never set CONVEX_DEPLOY_KEY.

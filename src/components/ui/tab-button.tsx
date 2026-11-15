@@ -9,7 +9,7 @@ type Props = TabTriggerSlotProps & { icon: IconName; label: string; dot?: boolea
 
 /** One tab in the bottom bar. Used through TabTrigger's asChild, which passes isFocused and onPress. */
 export function TabButton({ icon, label, dot, isFocused, onPress, ref, ...rest }: Props) {
-  const ink = isFocused ? colors.primary : colors.muted;
+  const ink = isFocused ? colors.accent : colors.muted;
   return (
     <Pressable
       {...rest}
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2, paddingTop: space(1.5), paddingBottom: space(1) },
   pressed: { opacity: 0.7 },
   pill: { width: 56, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  pillOn: { backgroundColor: colors.primarySoft },
+  pillOn: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: "rgba(212, 175, 55, 0.35)" },
   label: { fontWeight: "600" },
   labelOn: { fontWeight: "800" },
   dot: {
@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.terracotta,
     borderWidth: 1.5,
-    borderColor: colors.surface,
+    borderColor: colors.bg,
   },
 });

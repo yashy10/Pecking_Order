@@ -83,10 +83,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: space(4),
     paddingVertical: space(3),
     minHeight: 60,
-    backgroundColor: colors.surface,
   },
   highlight: { backgroundColor: colors.primarySoft },
-  pressed: { backgroundColor: colors.sunken },
+  pressed: { backgroundColor: colors.raised },
   text: { flex: 1, gap: 2 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginLeft: space(4) },
 });

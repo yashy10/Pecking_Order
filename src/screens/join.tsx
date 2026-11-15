@@ -61,7 +61,7 @@ export function Join({ code }: { code: string }) {
 
   const extra = Math.max(0, preview.memberCount - preview.emojis.length);
   return (
-    <Screen>
+    <Screen backdrop="full">
       <Card tone="soft" style={styles.invite} testID="join-invite">
         <Txt variant="overline" color={colors.muted}>
           You're invited to
@@ -110,9 +110,9 @@ export function Join({ code }: { code: string }) {
 const styles = StyleSheet.create({
   invite: { alignItems: "center", gap: space(3), paddingVertical: space(6) },
   flock: { flexDirection: "row", alignItems: "center", justifyContent: "center", flexWrap: "wrap" },
-  flockItem: { borderRadius: 22, borderWidth: 2, borderColor: colors.accentSoft },
+  flockItem: { borderRadius: 22, borderWidth: 2, borderColor: colors.bg },
   overlap: { marginLeft: -10 },
-  more: { width: 44, height: 44, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
+  more: { width: 44, height: 44, alignItems: "center", justifyContent: "center", backgroundColor: colors.raised },
   meJoin: { gap: space(3) },
   meRow: { flexDirection: "row", alignItems: "center", gap: space(3) },
   grow: { flex: 1 },
