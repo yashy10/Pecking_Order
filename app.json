@@ -51,6 +51,12 @@
         "projectId": "fa6f9008-92a2-424d-a1e7-20f343b68ec5"
       }
     },
-    "owner": "yashy10"
+    "owner": "yashy10",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/fa6f9008-92a2-424d-a1e7-20f343b68ec5"
+    }
   }
 }
