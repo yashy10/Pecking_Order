@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { Txt } from "@/components/ui";
+import { Icon, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, radius, space } from "@/theme";
 import * as haptics from "@/utils/haptics";
@@ -64,19 +64,30 @@ export function Banner({ groupId }: { groupId: Id<"groups"> }) {
 
   return (
     <Animated.View entering={FadeInDown.springify()} exiting={FadeOut} key={newestId}>
-      <Pressable accessibilityRole="button" accessibilityHint="Dismiss" onPress={dismiss} testID="banner">
-        <View style={styles.card}>
-          {unseen.map((e) => (
-            <View key={e.eventId} style={styles.row}>
-              <Text style={styles.icon}>{ICON[e.kind]}</Text>
-              <Txt style={styles.text}>{e.text}</Txt>
-            </View>
-          ))}
-          <Txt variant="caption" color={colors.muted}>
-            Tap to dismiss
+      <View style={styles.card} testID="banner" accessibilityLiveRegion="polite">
+        <View style={styles.head}>
+          <Txt variant="overline" color={colors.fog} style={styles.grow}>
+            Since the last reveal
           </Txt>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss"
+            hitSlop={10}
+            onPress={dismiss}
+            style={({ pressed }) => [styles.close, pressed && styles.closePressed]}
+          >
+            <Icon name="close" size={16} color={colors.surface} />
+          </Pressable>
         </View>
-      </Pressable>
+        {unseen.map((e) => (
+          <View key={e.eventId} style={styles.row}>
+            <Text style={styles.icon}>{ICON[e.kind]}</Text>
+            <Txt variant="heading" style={styles.text}>
+              {e.text}
+            </Txt>
+          </View>
+        ))}
+      </View>
     </Animated.View>
   );
 }
@@ -93,9 +104,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
     borderRadius: radius.card,
     padding: space(4),
-    gap: space(2),
+    paddingTop: space(3),
+    gap: space(2.5),
   },
+  head: { flexDirection: "row", alignItems: "center" },
+  grow: { flex: 1 },
+  close: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+  },
+  closePressed: { backgroundColor: "rgba(255, 255, 255, 0.24)" },
   row: { flexDirection: "row", alignItems: "center", gap: space(3) },
   icon: { fontSize: 22 },
-  text: { flex: 1, color: colors.surface, fontWeight: "800" },
+  text: { flex: 1, color: colors.surface },
 });

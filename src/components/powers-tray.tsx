@@ -1,13 +1,12 @@
 import { useMutation, useQuery } from "convex/react";
-import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { Button, Card, Txt } from "@/components/ui";
+import { Button, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, radius, space } from "@/theme";
+import { colors, elevation, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
 import * as haptics from "@/utils/haptics";
 
@@ -16,18 +15,20 @@ import * as haptics from "@/utils/haptics";
 
 type Power = "ghost" | "spy";
 
-const INFO: Record<Power, { emoji: string; name: string; line: string; on: string }> = {
+const INFO: Record<Power, { emoji: string; name: string; line: string; on: string; short: string }> = {
   ghost: {
     emoji: "👻",
     name: "Ghost",
     line: "Vanish from your rivals' boards until tomorrow.",
-    on: "Invisible until tomorrow",
+    on: "Hidden until tomorrow",
+    short: "Vanish for a day",
   },
   spy: {
     emoji: "🔭",
     name: "Spy",
     line: "See two more places above you until tomorrow.",
     on: "Spying until tomorrow",
+    short: "See 2 more above",
   },
 };
 
@@ -61,107 +62,107 @@ export function PowersTray({ groupId }: { groupId: Id<"groups"> }) {
   }
 
   return (
-    <Card testID="powers-tray">
-      <Txt variant="caption" color={colors.muted}>
-        POWERS
-      </Txt>
+    <View testID="powers-tray" style={styles.tray}>
       <View style={styles.row}>
         {(["ghost", "spy"] as const).map((type) => {
           const info = INFO[type];
-          const disabled = active[type] || count[type] < 1;
+          const empty = !active[type] && count[type] < 1;
+          const disabled = active[type] || empty;
+          const picked = confirming === type;
           return (
             <Pressable
               key={type}
               testID={`power-${type}`}
               accessibilityRole="button"
-              accessibilityState={{ disabled, selected: confirming === type }}
+              accessibilityLabel={`${info.name}, ${count[type]} left. ${active[type] ? info.on : info.line}`}
+              accessibilityState={{ disabled, selected: picked }}
               disabled={disabled}
               onPress={() => {
                 haptics.tap();
                 setError(null);
-                setConfirming(confirming === type ? null : type);
+                setConfirming(picked ? null : type);
               }}
-              style={[
+              style={({ pressed }) => [
                 styles.power,
+                picked && styles.powerPicked,
                 active[type] && styles.powerOn,
-                confirming === type && styles.powerPicked,
-                !active[type] && count[type] < 1 && styles.powerEmpty,
+                empty && styles.powerEmpty,
+                pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.emoji}>{info.emoji}</Text>
-              <View style={styles.grow}>
-                <Txt style={styles.bold}>
-                  {info.name} × {count[type]}
-                </Txt>
-                <Txt variant="caption" color={active[type] ? colors.primaryInk : colors.muted}>
-                  {active[type] ? info.on : count[type] < 1 ? "None left" : "Tap to use"}
-                </Txt>
+              <View style={styles.powerTop}>
+                <Text style={styles.emoji}>{info.emoji}</Text>
+                <View style={[styles.count, active[type] && styles.countOn]}>
+                  <Txt variant="caption" tabular color={active[type] ? colors.primary : colors.ink}>
+                    ×{count[type]}
+                  </Txt>
+                </View>
               </View>
+              <Txt variant="heading" color={active[type] ? colors.primaryInk : colors.ink}>
+                {info.name}
+              </Txt>
+              <Txt variant="caption" color={active[type] ? colors.primaryInk : colors.muted}>
+                {active[type] ? info.on : empty ? "None left" : picked ? "Confirm below" : info.short}
+              </Txt>
             </Pressable>
           );
         })}
       </View>
 
       {confirming ? (
-        <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.confirm}>
+        <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(120)} style={styles.confirm}>
           <Txt>{INFO[confirming].line}</Txt>
           {error ? <Txt color={colors.bad}>{error}</Txt> : null}
           <View style={styles.row}>
             <View style={styles.grow}>
+              <Button label="Not now" variant="secondary" size="sm" onPress={() => setConfirming(null)} />
+            </View>
+            <View style={styles.grow}>
               <Button
                 testID="power-confirm"
                 label={`Use ${INFO[confirming].name}`}
+                size="sm"
                 onPress={() => confirm(confirming)}
                 loading={busy}
               />
-            </View>
-            <View style={styles.grow}>
-              <Button label="Not now" variant="ghost" onPress={() => setConfirming(null)} />
             </View>
           </View>
         </Animated.View>
       ) : error ? (
         <Txt color={colors.bad}>{error}</Txt>
-      ) : (
-        <View style={styles.footer}>
-          <Txt variant="caption" color={colors.muted} style={styles.grow}>
-            Earned with streaks and the best score of the day. Never bought.
-          </Txt>
-          <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push("/pass")}>
-            <Txt variant="caption" color={colors.primary}>
-              ✨ Season Pass
-            </Txt>
-          </Pressable>
-        </View>
-      )}
-    </Card>
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  tray: { gap: space(3) },
   row: { flexDirection: "row", gap: space(3) },
-  footer: { flexDirection: "row", alignItems: "center", gap: space(3) },
   grow: { flex: 1 },
-  bold: { fontWeight: "800" },
-  emoji: { fontSize: 26 },
+  emoji: { fontSize: 28 },
   power: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space(2),
+    gap: space(1),
     padding: space(3),
-    borderRadius: radius.field,
-    borderWidth: 2,
+    borderRadius: radius.tile,
+    borderWidth: 1.5,
     borderColor: colors.border,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.surface,
+    boxShadow: elevation.card,
   },
-  powerPicked: { borderColor: colors.primary },
+  powerTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space(1) },
+  count: { backgroundColor: colors.sunken, borderRadius: radius.pill, paddingHorizontal: space(2), paddingVertical: 2 },
+  countOn: { backgroundColor: colors.primaryInk },
+  powerPicked: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   powerOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   powerEmpty: { opacity: 0.5 },
+  pressed: { transform: [{ scale: 0.98 }] },
   confirm: {
     gap: space(3),
     padding: space(3),
-    borderRadius: radius.field,
-    backgroundColor: colors.bg,
+    borderRadius: radius.tile,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
 });

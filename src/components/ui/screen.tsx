@@ -1,8 +1,9 @@
 import { router } from "expo-router";
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, layout, space } from "@/theme";
+import { IconButton } from "./icon-button";
 import { Txt } from "./txt";
 
 // Every screen is wrapped in Screen. It owns safe areas and the keyboard on
@@ -11,45 +12,52 @@ import { Txt } from "./txt";
 type Props = {
   children: ReactNode;
   title?: string;
+  /** A line under the title: where you are, what day it is. */
+  subtitle?: string;
   back?: boolean;
+  /** Where Back goes when there's no history (a deep link, a refresh). Defaults to home. */
+  backTo?: string;
   right?: ReactNode;
   scroll?: boolean;
   wide?: boolean; // the demo panel on a projector; every player screen stays narrow
+  /** Inside the group tabs: the tab bar below owns the bottom safe area. */
+  tabbed?: boolean;
 };
 
-export function Screen({ children, title, back, right, scroll = true, wide }: Props) {
+export function Screen({ children, title, subtitle, back, backTo = "/", right, scroll = true, wide, tabbed }: Props) {
   const insets = useSafeAreaInsets();
   const showHeader = Boolean(title || back || right);
   const width = wide ? styles.wide : null;
   const column = <View style={[styles.column, width]}>{children}</View>;
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.root, { paddingTop: insets.top, paddingBottom: tabbed ? 0 : insets.bottom }]}>
       {showHeader ? (
-        <View style={[styles.header, width]}>
+        <View style={[styles.header, width, back && styles.headerWithBack]}>
           {back ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-              hitSlop={12}
-              onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
-              style={styles.back}
-            >
-              <Txt variant="title" color={colors.primary}>
-                ‹
-              </Txt>
-            </Pressable>
+            <IconButton
+              icon="back"
+              label="Back"
+              onPress={() => (router.canGoBack() ? router.back() : router.replace(backTo))}
+            />
           ) : null}
-          <Txt variant="title" numberOfLines={1} style={styles.title}>
-            {title ?? ""}
-          </Txt>
-          {right}
+          <View style={styles.titles}>
+            <Txt variant="title" numberOfLines={1} accessibilityRole="header">
+              {title ?? ""}
+            </Txt>
+            {subtitle ? (
+              <Txt variant="caption" color={colors.muted} numberOfLines={1}>
+                {subtitle}
+              </Txt>
+            ) : null}
+          </View>
+          {right ? <View style={styles.right}>{right}</View> : null}
         </View>
       ) : null}
       <KeyboardAvoidingView behavior="padding" style={styles.flex}>
         {scroll ? (
           <ScrollView
-            contentContainerStyle={styles.scroll}
+            contentContainerStyle={[styles.scroll, tabbed && styles.scrollTabbed]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
           >
@@ -69,17 +77,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: space(2),
+    gap: space(1),
     width: "100%",
     maxWidth: layout.maxWidth,
     alignSelf: "center",
     paddingHorizontal: layout.gutter,
-    paddingVertical: space(2),
-    minHeight: 52,
+    paddingTop: space(2),
+    paddingBottom: space(3),
+    minHeight: 60,
   },
-  back: { width: 32, alignItems: "flex-start" },
-  title: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingBottom: space(8) },
-  column: { width: "100%", maxWidth: layout.maxWidth, alignSelf: "center", gap: space(4) },
+  headerWithBack: { paddingLeft: layout.gutter - space(2.5) }, // optically align the chevron with the gutter
+  titles: { flex: 1, gap: 1 },
+  right: { flexDirection: "row", alignItems: "center", gap: space(1), marginRight: -space(2) },
+  scroll: { flexGrow: 1, paddingHorizontal: layout.gutter, paddingTop: space(1), paddingBottom: space(8) },
+  scrollTabbed: { paddingBottom: space(6) },
+  column: { width: "100%", maxWidth: layout.maxWidth, alignSelf: "center", gap: space(5) },
   wide: { maxWidth: 1040 },
 });

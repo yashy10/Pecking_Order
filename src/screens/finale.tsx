@@ -14,7 +14,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Avatar, Button, Card, Loading, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, radius, space } from "@/theme";
+import { colors, space } from "@/theme";
 import * as haptics from "@/utils/haptics";
 
 // Owned by Track D. Sunday night: the board flips from the bottom up, slowing
@@ -60,63 +60,84 @@ export function Finale({ groupId }: { groupId: Id<"groups"> }) {
   const iAmLast = myPlace === total - 1 && total > 1;
 
   return (
-    <Card testID="finale">
-      <Txt variant="caption" color={colors.muted}>
-        WEEK {data.week} · THE PECKING ORDER
-      </Txt>
-      {done && champion ? (
-        <Animated.View entering={FadeIn.duration(500)} style={styles.championWrap}>
-          <Burst />
-          <Txt variant="title" align="center">
-            👑 {champion.name} rules the roost
-          </Txt>
-          {myPlace >= 0 ? (
-            <Txt color={colors.muted} align="center">
-              {myPlace === 0
-                ? "That's you. Champion of the week."
-                : iAmLast
-                  ? "Thanks for playing this week. Monday is a fresh start."
-                  : `You finished ${ordinal(myPlace + 1)} of ${total}.`}
+    <View style={styles.wrap} testID="finale">
+      <Card tone="soft" style={styles.hero}>
+        <Txt variant="overline" color={colors.muted}>
+          Week {data.week} · The pecking order
+        </Txt>
+        {done && champion ? (
+          <Animated.View entering={FadeIn.duration(500)} style={styles.championWrap}>
+            <Burst />
+            <Avatar emoji={champion.emoji} hasPass={champion.hasPass} size={72} />
+            <Txt variant="title" align="center">
+              👑 {champion.name} rules the roost
             </Txt>
-          ) : null}
-        </Animated.View>
-      ) : (
-        <Txt variant="title">The full board drops…</Txt>
-      )}
-
-      {data.standings.map((s, i) => {
-        const revealed = i >= total - shown;
-        const isMe = s.memberId === data.myMemberId;
-        if (!revealed) {
-          return (
-            <View key={s.memberId} style={styles.row}>
-              <Txt style={styles.place}>{i + 1}</Txt>
-              <Avatar fog size={36} />
-              <Txt color={colors.muted} style={styles.grow}>
-                ???
+            {myPlace >= 0 ? (
+              <Txt color={colors.muted} align="center">
+                {myPlace === 0
+                  ? "That's you. Champion of the week."
+                  : iAmLast
+                    ? "Thanks for playing this week. Monday is a fresh start."
+                    : `You finished ${ordinal(myPlace + 1)} of ${total}.`}
               </Txt>
-            </View>
-          );
-        }
-        return (
-          <Animated.View
-            key={s.memberId}
-            entering={FlipInXUp.duration(450)}
-            style={[styles.row, isMe && styles.me, i === 0 && done && styles.first]}
-          >
-            <Txt style={styles.place}>{i === 0 && done ? "👑" : i + 1}</Txt>
-            <Avatar emoji={s.emoji} hasPass={s.hasPass} size={36} />
-            <Txt style={[styles.grow, isMe && styles.bold]}>
-              {s.name}
-              {isMe ? " (you)" : ""}
-            </Txt>
-            <Txt style={styles.bold}>{s.points}</Txt>
+            ) : null}
           </Animated.View>
-        );
-      })}
+        ) : (
+          <View style={styles.championWrap}>
+            <Avatar fog size={72} />
+            <Txt variant="title" align="center">
+              The full board drops…
+            </Txt>
+            <Txt color={colors.muted} align="center">
+              From the bottom up. Hold on.
+            </Txt>
+          </View>
+        )}
+      </Card>
 
-      {done ? <Button label="Watch again" variant="ghost" onPress={() => setShown(0)} /> : null}
-    </Card>
+      <Card flush>
+        {data.standings.map((s, i) => {
+          const revealed = i >= total - shown;
+          const isMe = s.memberId === data.myMemberId;
+          if (!revealed) {
+            return (
+              <View key={s.memberId} style={[styles.row, i > 0 && styles.divider]}>
+                <Txt variant="label" color={colors.muted} tabular style={styles.place}>
+                  {i + 1}
+                </Txt>
+                <Avatar fog size={36} />
+                <Txt color={colors.muted} style={styles.grow}>
+                  ???
+                </Txt>
+              </View>
+            );
+          }
+          return (
+            <Animated.View
+              key={s.memberId}
+              entering={FlipInXUp.duration(450)}
+              style={[styles.row, i > 0 && styles.divider, isMe && styles.me, i === 0 && done && styles.first]}
+              accessible
+              accessibilityLabel={`${ordinal(i + 1)}, ${isMe ? "you" : s.name}, ${s.points} points`}
+            >
+              <Txt variant="label" color={colors.muted} tabular style={styles.place}>
+                {i === 0 && done ? "👑" : i + 1}
+              </Txt>
+              <Avatar emoji={s.emoji} hasPass={s.hasPass} size={36} />
+              <Txt variant={isMe ? "heading" : "body"} style={styles.grow} numberOfLines={1}>
+                {s.name}
+                {isMe ? " (you)" : ""}
+              </Txt>
+              <Txt variant="heading" tabular>
+                {s.points}
+              </Txt>
+            </Animated.View>
+          );
+        })}
+      </Card>
+
+      {done ? <Button label="Watch again" variant="secondary" onPress={() => setShown(0)} /> : null}
+    </View>
   );
 }
 
@@ -156,23 +177,22 @@ function Particle({ emoji, angle, delay }: { emoji: string; angle: number; delay
 }
 
 const styles = StyleSheet.create({
-  championWrap: { alignItems: "center", gap: space(1), paddingVertical: space(2) },
-  burst: { position: "absolute", top: "50%", left: "50%", width: 0, height: 0 },
+  wrap: { gap: space(4) },
+  hero: { alignItems: "center", paddingVertical: space(6), overflow: "visible" },
+  championWrap: { alignItems: "center", gap: space(2) },
+  burst: { position: "absolute", top: "35%", left: "50%", width: 0, height: 0 },
   particle: { position: "absolute", fontSize: 26 },
-  row: { flexDirection: "row", alignItems: "center", gap: space(3), minHeight: 44 },
-  me: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.field,
-    padding: space(2),
-    marginHorizontal: -space(2),
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space(3),
+    minHeight: 56,
+    paddingHorizontal: space(4),
+    paddingVertical: space(2),
   },
-  first: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.field,
-    padding: space(2),
-    marginHorizontal: -space(2),
-  },
-  place: { width: 28, fontWeight: "800", color: colors.muted, textAlign: "center" },
+  divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  me: { backgroundColor: colors.primarySoft },
+  first: { backgroundColor: colors.accentSoft },
+  place: { width: 28, textAlign: "center" },
   grow: { flex: 1 },
-  bold: { fontWeight: "800" },
 });
