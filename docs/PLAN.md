@@ -561,6 +561,8 @@ Each track gets the prompt in Appendix B with its letter filled in. Each opens o
 
 ### Track A — groups, join, hub
 
+**Done by the lead at 1:25** (join goes straight into today's game). The hub was then redesigned into Today / Board / Crew tabs by the redesign session.
+
 **Owns:** `convex/users.ts`, `convex/groups.ts`, `convex/today.ts`, `src/screens/home.tsx`, `join.tsx`, `invite.tsx`, `group-hub.tsx`, `src/components/today-card.tsx`.
 
 **Build:**
@@ -575,6 +577,8 @@ Each track gets the prompt in Appendix B with its letter filled in. Each opens o
 **Done when:** two browsers can create and join the same group in under 10 seconds each. A refresh keeps you signed in. Joining twice does nothing. `today.get` contains no other member's points.
 
 ### Track B — Blur
+
+**Done by the lead at 1:25.** Typo tolerance per the rules below (9 tests), shake on a wrong guess.
 
 **Owns:** `convex/blur.ts`, `convex/lib/match.ts` and its test, `src/screens/blur-game.tsx`. Photos and the accepted-answer list belong to the lead.
 

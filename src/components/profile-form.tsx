@@ -10,7 +10,7 @@ import { errorMessage } from "@/utils/errors";
 
 // Owned by Track A. Name + emoji. Used on Home and on the join link.
 
-export function ProfileForm({ cta = "Save" }: { cta?: string }) {
+export function ProfileForm({ cta = "Save", onSaved }: { cta?: string; onSaved?: () => void }) {
   const token = useToken();
   const save = useMutation(api.users.saveProfile);
   const [name, setName] = useState("");
@@ -24,6 +24,7 @@ export function ProfileForm({ cta = "Save" }: { cta?: string }) {
     setError(null);
     try {
       await save({ token, name, emoji });
+      onSaved?.();
     } catch (e) {
       setError(errorMessage(e));
     } finally {

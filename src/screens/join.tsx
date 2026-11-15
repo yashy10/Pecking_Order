@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "convex/react";
+import { useConvex, useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -9,11 +9,12 @@ import { useToken } from "@/hooks/use-identity";
 import { colors, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
 
-// Owned by Track A. The page a judge lands on from the QR code.
-// Track A: after joining, go straight to today's game when it is unplayed (PLAN §8).
+// Track A (built by the lead). The page a judge lands on from the QR code:
+// name and emoji, then straight into today's game. Already set up? One tap.
 
 export function Join({ code }: { code: string }) {
   const token = useToken();
+  const convex = useConvex();
   const me = useQuery(api.users.me, token ? { token } : "skip");
   const preview = useQuery(api.groups.preview, code ? { code } : "skip");
   const join = useMutation(api.groups.join);
@@ -45,7 +46,10 @@ export function Join({ code }: { code: string }) {
     setError(null);
     try {
       const { groupId } = await join({ token, code });
-      router.replace(`/g/${groupId}`);
+      const today = await convex.query(api.today.get, { token, groupId });
+      const unplayed =
+        today?.group.phase === "open" && today.game !== null && today.myPlay.status === "none";
+      router.replace(unplayed ? `/g/${groupId}/play` : `/g/${groupId}`);
     } catch (e) {
       setError(errorMessage(e));
       setBusy(false);
@@ -68,13 +72,14 @@ export function Join({ code }: { code: string }) {
       </Card>
 
       {me === null ? (
-        <ProfileForm cta="Save and continue" />
+        <ProfileForm cta="Join and play" onSaved={onJoin} />
       ) : (
         <>
           {error ? <Txt color={colors.bad}>{error}</Txt> : null}
           <Button testID="join-group" label={`Join ${preview.name}`} onPress={onJoin} loading={busy} />
         </>
       )}
+      {me === null && error ? <Txt color={colors.bad}>{error}</Txt> : null}
     </Screen>
   );
 }

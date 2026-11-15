@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
-import { action, internalAction, internalMutation, internalQuery } from "./_generated/server";
+import { action, internalAction, internalMutation, internalQuery, query } from "./_generated/server";
 import { findUser } from "./lib/auth";
 
 // Owned by the lead. The Whop Season Pass (PLAN §10, step 4). Free and cosmetic only.
@@ -18,6 +18,13 @@ const SEASON_PASS_VARIANT = "plan_VOxo9WDC7oEtO"; // "Pecking Order Season Pass"
 const WEB_URL = "https://pecking-order.expo.app";
 const SECRET_SETTING = "whopWebhookSecret";
 const HOOK_SETTING = "whopWebhookId";
+
+/** Whether checkout is switched on (WHOP_API_KEY is set). Lets the app say "coming soon" instead of failing. */
+export const status = query({
+  args: {},
+  returns: v.object({ connected: v.boolean() }),
+  handler: async () => ({ connected: Boolean(process.env.WHOP_API_KEY) }),
+});
 
 export const profileFor = internalQuery({
   args: { token: v.string() },

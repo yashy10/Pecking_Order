@@ -22,6 +22,7 @@ const PERKS = [
 export function Pass() {
   const token = useToken();
   const me = useQuery(api.users.me, token ? { token } : "skip");
+  const whop = useQuery(api.whop.status, {});
   const createCheckout = useAction(api.whop.createCheckout);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +69,13 @@ export function Pass() {
           <Txt variant="title">✨ You have the Season Pass</Txt>
           <Txt color={colors.muted}>Your ring is showing on every board.</Txt>
         </Card>
+      ) : whop && !whop.connected ? (
+        <>
+          <Button testID="pass-checkout" label="Coming soon on Whop" disabled onPress={() => {}} />
+          <Txt variant="caption" color={colors.muted} align="center">
+            Free during launch. Checkout opens here as soon as it goes live.
+          </Txt>
+        </>
       ) : (
         <>
           {error ? <Txt color={colors.bad}>{error}</Txt> : null}
@@ -75,7 +83,7 @@ export function Pass() {
             testID="pass-checkout"
             label="Get it free on Whop"
             loading={busy}
-            disabled={!me}
+            disabled={!me || !whop}
             onPress={open}
           />
           <Txt variant="caption" color={colors.muted} align="center">

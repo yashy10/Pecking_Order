@@ -3,6 +3,13 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Button, Card, Field, Loading, Screen, Txt } from "@/components/ui";
@@ -33,6 +40,8 @@ export function BlurGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: I
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const shake = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
 
   useEffect(() => {
     if (!token) return;
@@ -76,6 +85,11 @@ export function BlurGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: I
         setWrong((w) => w + 1);
         setText("");
         haptics.error();
+        shake.value = withSequence(
+          withTiming(-10, { duration: 50 }),
+          withRepeat(withTiming(10, { duration: 80 }), 3, true),
+          withTiming(0, { duration: 50 }),
+        );
       }
     } catch (e) {
       setError(errorMessage(e));
@@ -144,18 +158,20 @@ export function BlurGame({ groupId, gameId }: { groupId: Id<"groups">; gameId: I
           <Txt variant="title" align="center">
             {livePoints} points
           </Txt>
-          <Field
-            testID="guess-field"
-            value={text}
-            onChangeText={setText}
-            placeholder="What is it?"
-            autoFocus
-            autoCapitalize="none"
-            autoCorrect={false}
-            maxLength={60}
-            returnKeyType="go"
-            onSubmitEditing={() => text.trim() && submit(text)}
-          />
+          <Animated.View style={shakeStyle}>
+            <Field
+              testID="guess-field"
+              value={text}
+              onChangeText={setText}
+              placeholder="What is it?"
+              autoFocus
+              autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={60}
+              returnKeyType="go"
+              onSubmitEditing={() => text.trim() && submit(text)}
+            />
+          </Animated.View>
           {wrong > 0 ? <Txt color={colors.bad}>Not quite. Each wrong guess costs 5.</Txt> : null}
           {error ? <Txt color={colors.bad}>{error}</Txt> : null}
           <Button
