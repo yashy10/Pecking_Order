@@ -633,6 +633,8 @@ This runs ahead of time, so its latency never touches a player. A failed or unpa
 
 ### Track D — rivals, powers, finale
 
+**Done by the lead at 12:45. Do not start a Capy task for Track D.** 14 unit tests and a cloud check cover every "done when" below.
+
 **Owns:** `convex/rivals.ts`, `convex/powers.ts`, `convex/weeks.ts`, `convex/lib/standings.ts` and its test, `src/components/rivals-panel.tsx`, `powers-tray.tsx`, `src/screens/finale.tsx`.
 
 **Build:**
