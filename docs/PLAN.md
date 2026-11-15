@@ -463,7 +463,7 @@ memory.remember, memory.squawk                                    internal actio
 Four agents will each invent a design unless the system is fixed first. Phase 0 fixes it.
 
 - **Light mode only** (`userInterfaceStyle: "light"`).
-- **Colours:** background `#FFF8ED` (cream), surface `#FFFFFF`, ink `#1F1410`, muted `#7A6A5E`, primary `#C2410C` (the burnt orange from your PDFs), accent `#F5B700` (yolk), good `#1E9E5A`, bad `#D7263D`, fog `#D9D2C7`, border `#EADFCF`.
+- **Colours:** background `#FFF8ED` (cream), surface `#FFFFFF`, ink `#1F1410`, muted `#6F5F54`, primary `#C2410C` (the burnt orange from your PDFs), primaryDeep `#A8380A` (small text on soft orange), accent `#F5B700` (yolk), good `#157A45`, bad `#C01F35`, fog `#D9D2C7`, border `#EADFCF`. Every text pairing is at least 4.5:1 (WCAG AA) since the refinement pass; `src/theme.ts` is the source of truth, including the soft tints.
 - **Type:** system font. Display 40/800, title 24/800, body 17/500, caption 13/600.
 - **Shape:** cards radius 20, pills fully round, 4-point spacing grid, 16 px screen gutter.
 - **People:** emoji in a 44 px circle on the accent colour.

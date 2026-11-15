@@ -156,8 +156,8 @@ export function DemoPanel() {
                 <Pill label={PHASE[state.phase]} tone="neutral" />
               </View>
               <View style={styles.stats}>
-                <Stat value={state.humans.length} label="people" />
-                <Stat value={state.botCount} label="bots" />
+                <Stat value={state.humans.length} label={state.humans.length === 1 ? "person" : "people"} />
+                <Stat value={state.botCount} label={state.botCount === 1 ? "bot" : "bots"} />
                 <Stat
                   value={state.gameType ? state.playedCount : "—"}
                   label={state.gameType ? `played ${state.gameType === "blur" ? "Blur" : "Who Said It"}` : "no game today"}
