@@ -1,16 +1,15 @@
 import { useConvex, useMutation, useQuery } from "convex/react";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { api } from "@convex/_generated/api";
-import { ProfileForm } from "@/components/profile-form";
 import { Avatar, Button, Card, EmptyState, Screen, ScreenSkeleton, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
 
 // Track A (built by the lead). The page a judge lands on from the QR code:
-// name and emoji, then straight into today's game. Already set up? One tap.
+// onboarding if needed, then straight into today's game. Already set up? One tap.
 
 export function Join({ code }: { code: string }) {
   const token = useToken();
@@ -27,6 +26,11 @@ export function Join({ code }: { code: string }) {
         <ScreenSkeleton />
       </Screen>
     );
+  }
+
+  // Not signed in yet: onboarding first, then straight back to this invite.
+  if (me === null || !me.signedIn || me.needsProfile) {
+    return <Redirect href={`/welcome?next=${encodeURIComponent(`/join/${code}`)}`} />;
   }
 
   if (preview === null) {
@@ -88,21 +92,16 @@ export function Join({ code }: { code: string }) {
         </Txt>
       </Card>
 
-      {me === null ? (
-        <ProfileForm cta="Join and play" onSaved={onJoin} />
-      ) : (
-        <View style={styles.meJoin}>
-          <View style={styles.meRow}>
-            <Avatar emoji={me.emoji} hasPass={me.hasPass} size={40} />
-            <Txt variant="heading" style={styles.grow}>
-              Joining as {me.name}
-            </Txt>
-          </View>
-          {error ? <Txt color={colors.bad}>{error}</Txt> : null}
-          <Button testID="join-group" label={`Join ${preview.name}`} onPress={onJoin} loading={busy} />
+      <View style={styles.meJoin}>
+        <View style={styles.meRow}>
+          <Avatar emoji={me.emoji} hasPass={me.hasPass} size={40} />
+          <Txt variant="heading" style={styles.grow}>
+            Joining as {me.name}
+          </Txt>
         </View>
-      )}
-      {me === null && error ? <Txt color={colors.bad}>{error}</Txt> : null}
+        {error ? <Txt color={colors.bad}>{error}</Txt> : null}
+        <Button testID="join-group" label={`Join ${preview.name}`} onPress={onJoin} loading={busy} />
+      </View>
     </Screen>
   );
 }

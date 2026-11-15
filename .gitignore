@@ -48,3 +48,6 @@ example
 
 # Playwright MCP screenshots and logs
 .playwright-mcp/
+
+# Google OAuth client downloads (contain the client secret)
+client_secret_*.json

@@ -21,7 +21,27 @@ export default defineSchema({
     emoji: v.string(),
     isBot: v.boolean(),
     hasPass: v.boolean(),
-  }).index("by_token", ["token"]),
+    googleSub: v.optional(v.string()), // Google account id; set by Continue with Google
+    needsProfile: v.optional(v.boolean()), // true until a new Google user picks their name and bird
+  })
+    .index("by_token", ["token"])
+    .index("by_googleSub", ["googleSub"]),
+
+  // One row per Continue with Google attempt. Server-only; deleted when claimed or expired.
+  // `verifier` never leaves the device that started the attempt, so a sign-in link sent to
+  // someone else can't be finished on the wrong device.
+  googleLogins: defineTable({
+    state: v.string(),
+    verifier: v.string(),
+    returnTo: v.string(),
+    expiresAt: v.number(),
+    claim: v.optional(v.string()),
+    googleSub: v.optional(v.string()),
+    givenName: v.optional(v.string()),
+  })
+    .index("by_state", ["state"])
+    .index("by_claim", ["claim"])
+    .index("by_expiresAt", ["expiresAt"]),
 
   groups: defineTable({
     name: v.string(),

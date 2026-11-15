@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "convex/react";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { api } from "@convex/_generated/api";
@@ -12,7 +12,7 @@ import { errorMessage } from "@/utils/errors";
 
 // Owned by Track A. The table: the brand at the top, an empty centre, and everything you
 // can do in the lower third, where a thumb reaches (from docs/design/board_game_mobile_backdrop.html).
-// First run: who are you. After that: your groups ("tables"), then host or join one.
+// First run goes to /welcome (onboarding). After that: your groups ("tables"), then host or join one.
 
 type Panel = "create" | "join" | "profile" | null;
 
@@ -52,8 +52,8 @@ export function Home() {
             <Skeleton height={64} />
             <Skeleton height={64} />
           </View>
-        ) : me === null ? (
-          <ProfileForm cta="Take a seat" title="Who's playing?" />
+        ) : me === null || !me.signedIn || me.needsProfile ? (
+          <Redirect href="/welcome" />
         ) : panel === "profile" ? (
           <ProfileForm
             title="Edit profile"
