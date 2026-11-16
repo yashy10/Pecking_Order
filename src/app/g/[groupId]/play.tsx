@@ -37,7 +37,7 @@ const SCREENS: Record<GameType, ComponentType<GameProps>> = {
 };
 
 export default function PlayRoute() {
-  const { groupId, game: wanted } = useLocalSearchParams<{ groupId: string; game?: string }>();
+  const { groupId, game: wanted, r: round } = useLocalSearchParams<{ groupId: string; game?: string; r?: string }>();
   const id = groupId as Id<"groups">;
   const token = useToken();
   const today = useQuery(api.today.get, token ? { token, groupId: id } : "skip");
@@ -69,5 +69,5 @@ export default function PlayRoute() {
   // Automatic groups know when today's reveal is; demo groups reveal when the presenter says.
   const revealAt = today.group.phase === "open" ? today.group.nextTickAt : null;
   const Game = SCREENS[game.type];
-  return <Game key={game.gameId} groupId={id} gameId={game.gameId} multiplier={game.multiplier} revealAt={revealAt} />;
+  return <Game key={`${game.gameId}-${round ?? ""}`} groupId={id} gameId={game.gameId} multiplier={game.multiplier} revealAt={revealAt} />;
 }

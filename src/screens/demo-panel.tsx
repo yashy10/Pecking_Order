@@ -44,6 +44,8 @@ export function DemoPanel() {
   const resetWeek = useMutation(api.demo.resetWeek);
   const claimDemoAccount = useMutation(api.demo.useDemoAccount);
   const arcade = useMutation(api.demo.arcade);
+  const showcaseId = useQuery(api.showcase.panelGroup, demoKey ? { demoKey } : "skip");
+  const rebuildShowcase = useMutation(api.showcase.rebuild);
   const answerKey = useQuery(api.demo.answerKey, demoKey && groupId ? { demoKey, groupId } : "skip");
 
   useEffect(() => {
@@ -299,6 +301,33 @@ export function DemoPanel() {
                   })
                 }
               />
+              <View style={styles.row}>
+                <View style={styles.cell}>
+                  <Button
+                    testID="demo-showcase-key"
+                    label="Admin Games answers"
+                    variant="secondary"
+                    disabled={!showcaseId || busy !== null}
+                    onPress={() => showcaseId && chooseGroup(showcaseId)}
+                  />
+                </View>
+                <View style={styles.cell}>
+                  <Button
+                    testID="demo-showcase-rebuild"
+                    label="Rebuild Admin Games"
+                    variant="secondary"
+                    loading={busy === "Rebuild"}
+                    disabled={busy !== null}
+                    onPress={() =>
+                      run("Rebuild", async () => {
+                        const id = await rebuildShowcase({ demoKey: key });
+                        chooseGroup(id);
+                        return "Admin Games rebuilt: fresh bots and answers. Players rejoin with one tap on the home screen.";
+                      })
+                    }
+                  />
+                </View>
+              </View>
               <Button
                 testID="demo-use-account"
                 label="Use this device as the demo player"

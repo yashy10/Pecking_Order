@@ -33,12 +33,12 @@ const DEMO_WEEK = 2;
 
 const IDLE_BOTS = new Set(BOTS.filter((b) => b.idle).map((b) => b.name));
 
-function keyMatches(demoKey: string): boolean {
+export function keyMatches(demoKey: string): boolean {
   const expected = process.env.DEMO_KEY;
   return Boolean(expected) && demoKey === expected;
 }
 
-function checkDemoKey(demoKey: string): void {
+export function checkDemoKey(demoKey: string): void {
   if (!process.env.DEMO_KEY) throw new ConvexError("DEMO_KEY isn't set on this deployment.");
   if (!keyMatches(demoKey)) throw new ConvexError("Wrong demo key.");
 }
@@ -626,25 +626,39 @@ export const arcade = mutation({
   returns: v.object({ groupId: v.id("groups"), inviteCode: v.string() }),
   handler: async (ctx, { demoKey, name }) => {
     checkDemoKey(demoKey);
-    const user = await demoUser(ctx);
+    return await buildArcade(ctx, { name: name?.trim() || "Game Night", player: await demoUser(ctx) });
+  },
+});
+
+/**
+ * Builds an arcade: Thursday of week 2 with every mini game and every friends game open,
+ * twelve bots who have played and answered, and today's question. With a `player`, that
+ * user is in it and made it. Admin Games (showcase.ts) is an arcade with no player.
+ */
+export async function buildArcade(
+  ctx: MutationCtx,
+  { name, player }: { name: string; player: Doc<"users"> | null },
+): Promise<{ groupId: Id<"groups">; inviteCode: string }> {
     const week = 2;
     const day = 3;
     const inviteCode = await uniqueInviteCode(ctx);
     const groupId = await ctx.db.insert("groups", {
-      name: name?.trim() || "Game Night",
+      name,
       inviteCode,
       week,
       day,
       phase: "open",
       autoClock: false,
-      createdBy: user._id,
+      ...(player ? { createdBy: player._id } : {}),
     });
-    await ctx.db.insert("members", {
-      ...newMemberDoc(groupId, { userId: user._id, name: user.name, emoji: user.emoji, isBot: false, hasPass: user.hasPass }),
-      weekPoints: 240,
-      prevWeekPoints: 240,
-      streak: 4,
-    });
+    if (player) {
+      await ctx.db.insert("members", {
+        ...newMemberDoc(groupId, { userId: player._id, name: player.name, emoji: player.emoji, isBot: false, hasPass: player.hasPass }),
+        weekPoints: 240,
+        prevWeekPoints: 240,
+        streak: 4,
+      });
+    }
     const banked = shuffle(BANKED_POINTS);
     let n = 0;
     for (const bot of BOTS) {
@@ -707,8 +721,7 @@ export const arcade = mutation({
     const group = await loadGroup(ctx, groupId);
     await botsPlayToday(ctx, group);
     return { groupId, inviteCode };
-  },
-});
+}
 
 const keyEntryV = v.object({
   gameId: v.id("games"),

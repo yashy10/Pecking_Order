@@ -5,6 +5,7 @@ import { findUser, requireUser } from "./lib/auth";
 import { dayLabel, GROUP_NAME_MAX_CHARS } from "./lib/constants";
 import { membersOf, newMemberDoc } from "./lib/day";
 import { MAX_OFFSET_MINUTES, MIN_OFFSET_MINUTES, nextTickAt, startingPoint } from "./lib/schedule";
+import { showcaseGroupId } from "./lib/showcase";
 import { scheduleReminders } from "./notifications";
 import { phaseV } from "./schema";
 
@@ -127,9 +128,11 @@ export const mine = query({
       .withIndex("by_userId", (q) => q.eq("userId", user.userId))
       .take(50);
     const groups = [];
+    // Admin Games has its own pinned card on the home screen.
+    const showcase = await showcaseGroupId(ctx);
     for (const m of memberships) {
       const group = await ctx.db.get("groups", m.groupId);
-      if (group) {
+      if (group && group._id !== showcase) {
         groups.push({
           groupId: group._id,
           name: group.name,

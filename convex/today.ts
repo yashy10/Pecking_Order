@@ -6,6 +6,7 @@ import { dayLabel, FRIENDS_FROM_WEEK, LAST_GAME_DAY, MAX_MEMBERS } from "./lib/c
 import { gamesFor, isGroupCreator, membersOf, promptFor } from "./lib/day";
 import { isFriendGame, maxPointsFor, promptShape } from "./lib/games";
 import { finaleAt } from "./lib/schedule";
+import { showcaseGroupId } from "./lib/showcase";
 import { friendGameV, gameTypeV, phaseV, promptKindV, slotV } from "./schema";
 
 // Owned by Track A. What a member sees today: the day's games (a mini game, and from
@@ -32,6 +33,7 @@ export const get = query({
         nextTickAt: v.union(v.number(), v.null()),
         finaleAt: v.union(v.number(), v.null()), // this week's Sunday 9 PM
         canDelete: v.boolean(), // I made this group, so I may delete it for everyone
+        showcase: v.boolean(), // Admin Games: every game open, replay any of them
       }),
       myMemberId: v.id("members"),
       // The friends game first, then the mini game. Empty on Sunday.
@@ -73,6 +75,7 @@ export const get = query({
     const me = await findMember(ctx, token, groupId);
     if (!me) return null;
     const members = await membersOf(ctx, groupId);
+    const showcase = (await showcaseGroupId(ctx)) === groupId;
     const emojiOf = new Map(members.map((m) => [m._id, m.emoji]));
     const games = await gamesFor(ctx, groupId, group.week, group.day);
     const prompt = await promptFor(ctx, groupId, group.week, group.day);
@@ -125,7 +128,8 @@ export const get = query({
         nextTickAt: group.autoClock ? (group.nextTickAt ?? null) : null,
         finaleAt:
           group.autoClock && group.weekStartsAt !== undefined ? finaleAt(group.weekStartsAt) : null,
-        canDelete: isGroupCreator(group, me, members),
+        canDelete: !showcase && isGroupCreator(group, me, members),
+        showcase,
       },
       myMemberId: me._id,
       games: gameRows,

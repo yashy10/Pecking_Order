@@ -18,6 +18,7 @@ import { GAME_INFO } from "@/components/game-info";
 import { NotifyCard } from "@/components/notify-card";
 import { Button, Card, Icon, Pill, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
+import { useReplay } from "@/hooks/use-replay";
 import { useNow } from "@/hooks/use-now";
 import { colors, fonts, space } from "@/theme";
 import * as haptics from "@/utils/haptics";
@@ -50,6 +51,8 @@ const LOCK_MS = 260;
 export function SealedResult({ groupId, gameId, points, multiplier, revealAt, onBack, testID, backTestID, children }: Props) {
   const token = useToken();
   const today = useQuery(api.today.get, token && gameId ? { token, groupId } : "skip");
+  const showcase = today?.group.showcase === true;
+  const { playAgain, busy: replaying } = useReplay(groupId);
   const next =
     today?.group.phase === "open"
       ? today.games.find((g) => g.gameId !== gameId && g.myPlay.status !== "done")
@@ -111,12 +114,23 @@ export function SealedResult({ groupId, gameId, points, multiplier, revealAt, on
         {scored && multiplier > 1 ? <Pill label={`×${multiplier} Wildcard Wednesday`} tone="soft" /> : null}
   
         <Txt color={colors.muted} align="center" style={styles.tease}>
-          {scored
-            ? `Did you just pass someone? Find out at ${reveal}.`
-            : "Nothing sealed this time. Tomorrow is a new round."}
+          {showcase
+            ? "Admin Games is for practice: play any round again as often as you like."
+            : scored
+              ? `Did you just pass someone? Find out at ${reveal}.`
+              : "Nothing sealed this time. Tomorrow is a new round."}
         </Txt>
   
         <View style={styles.actions}>
+          {showcase && gameId ? (
+            <Button
+              testID="play-again"
+              variant={next ? "secondary" : "primary"}
+              label="Play again"
+              loading={replaying === gameId}
+              onPress={() => playAgain(gameId, "replace")}
+            />
+          ) : null}
           {next ? (
             <Button
               testID="play-next"
@@ -124,12 +138,14 @@ export function SealedResult({ groupId, gameId, points, multiplier, revealAt, on
               onPress={() => router.replace(`/g/${groupId}/play?game=${next.gameId}`)}
             />
           ) : null}
-          <Button
-            testID="see-board"
-            variant={next ? "secondary" : "primary"}
-            label="See the board"
-            onPress={() => router.dismissTo(`/g/${groupId}/board`)}
-          />
+          {showcase ? null : (
+            <Button
+              testID="see-board"
+              variant={next ? "secondary" : "primary"}
+              label="See the board"
+              onPress={() => router.dismissTo(`/g/${groupId}/board`)}
+            />
+          )}
           <Button testID={backTestID} variant="ghost" label="Back to today" onPress={onBack} />
         </View>
       </Card>

@@ -5,6 +5,7 @@ import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } fr
 import { findUser, requireMember } from "./lib/auth";
 import { dayLabel, GROUP_NAME_MAX_CHARS } from "./lib/constants";
 import { isGroupCreator, isOpenGame, membersOf } from "./lib/day";
+import { showcaseGroupId } from "./lib/showcase";
 import { phaseV } from "./schema";
 
 // The player's profile page and a group's settings: your stats across groups, renaming a
@@ -150,7 +151,9 @@ export const leaveGroup = mutation({
 
     // Nobody real is left: the group closes for good.
     const remaining = await membersOf(ctx, group._id);
-    if (!remaining.some((m) => !m.isBot)) await closeGroup(ctx, group);
+    if (!remaining.some((m) => !m.isBot) && group._id !== (await showcaseGroupId(ctx))) {
+      await closeGroup(ctx, group);
+    }
     return null;
   },
 });
@@ -163,6 +166,7 @@ export const deleteGroup = mutation({
     const me = await requireMember(ctx, args.token, args.groupId);
     const group = await ctx.db.get("groups", args.groupId);
     if (!group) throw new ConvexError("That group doesn't exist.");
+    if (group._id === (await showcaseGroupId(ctx))) throw new ConvexError("Admin Games can't be deleted.");
     if (!isGroupCreator(group, me, await membersOf(ctx, group._id))) {
       throw new ConvexError("Only the person who made this group can delete it.");
     }
@@ -176,7 +180,7 @@ export const deleteGroup = mutation({
  * invite code stops working; the rest (games, plays, questions, answers, powers, news,
  * past standings) is cleared in the background, a batch at a time.
  */
-async function closeGroup(ctx: MutationCtx, group: Doc<"groups">): Promise<void> {
+export async function closeGroup(ctx: MutationCtx, group: Doc<"groups">): Promise<void> {
   const members = await membersOf(ctx, group._id);
   for (const m of members) await ctx.db.delete("members", m._id);
   await ctx.db.delete("groups", group._id);

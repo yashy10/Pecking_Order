@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import type { Id } from "@convex/_generated/dataModel";
 import { GAME_INFO } from "@/components/game-info";
 import { Button, Card, Icon, Mark, Txt, usePlace } from "@/components/ui";
+import { useReplay } from "@/hooks/use-replay";
 import { colors, radius, space } from "@/theme";
 import type { Today } from "@/utils/convex";
 
@@ -37,7 +38,14 @@ export function TodayCard({ groupId, today }: { groupId: Id<"groups">; today: To
   return (
     <View style={styles.stack}>
       {games.map((g) => (
-        <GameCard key={g.gameId} groupId={groupId} game={g} memberCount={group.memberCount} hero={g === next} />
+        <GameCard
+          key={g.gameId}
+          groupId={groupId}
+          game={g}
+          memberCount={group.memberCount}
+          hero={g === next}
+          showcase={group.showcase}
+        />
       ))}
       {friendsNote ? <FriendsTeaser note={friendsNote} /> : null}
       {/* With one card on the page there is room to show how the week works. */}
@@ -51,12 +59,16 @@ function GameCard({
   game,
   memberCount,
   hero,
+  showcase,
 }: {
   groupId: Id<"groups">;
   game: GameRow;
   memberCount: number;
   hero: boolean;
+  /** Admin Games: a finished round can be played again. */
+  showcase: boolean;
 }) {
+  const { playAgain, busy } = useReplay(groupId);
   const info = GAME_INFO[game.type];
   const friends = game.slot === "friends";
   const top = game.maxPoints * game.multiplier;
@@ -79,7 +91,21 @@ function GameCard({
             {info.name}
           </Txt>
         </View>
-        {done ? (
+        {done && showcase ? (
+          <View style={styles.again}>
+            <Txt variant="caption" color={colors.muted} tabular>
+              Last go: {game.myPlay.points}
+            </Txt>
+            <Button
+              testID={`again-${game.type}`}
+              size="sm"
+              variant="secondary"
+              label="Play again"
+              loading={busy === game.gameId}
+              onPress={() => playAgain(game.gameId)}
+            />
+          </View>
+        ) : done ? (
           <View style={styles.sealed}>
             <Txt variant="title" tabular>
               {game.myPlay.points}
@@ -104,7 +130,11 @@ function GameCard({
         </Txt>
       )}
       <Txt variant="caption" color={colors.muted} tabular>
-        {done ? `${playedLine}. Revealed tonight.` : `Up to ${top} points · ${playedLine}`}
+        {showcase
+          ? `Up to ${top} points · practice, play as often as you like`
+          : done
+            ? `${playedLine}. Revealed tonight.`
+            : `Up to ${top} points · ${playedLine}`}
       </Txt>
     </Card>
   );
@@ -214,6 +244,7 @@ function Steps({ at }: { at: 1 | 2 | 3 }) {
 }
 
 const styles = StyleSheet.create({
+  again: { alignItems: "flex-end", gap: 2 },
   stack: { gap: space(3) },
   center: { alignItems: "center", paddingVertical: space(5) },
   stretch: { alignSelf: "stretch", marginTop: space(1) },

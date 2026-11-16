@@ -148,6 +148,8 @@ export function Home() {
               </Txt>
             )}
 
+            <AdminGames />
+
             <View style={styles.grid}>
               <View style={styles.cell}>
                 <GameButton
@@ -191,6 +193,39 @@ export function Home() {
         )}
       </View>
     </Screen>
+  );
+}
+
+/** Admin Games: every game open, for every account. Joins you on the first tap. */
+function AdminGames() {
+  const token = useToken();
+  const enter = useMutation(api.showcase.enter);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function open() {
+    if (!token || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { groupId } = await enter({ token });
+      router.push(`/g/${groupId}`);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <View>
+      <GameButton
+        testID="admin-games"
+        overline={busy ? "Opening…" : "All 11 games · play any time"}
+        title="Admin Games"
+        leading={<Text style={styles.adminGlyph}>🎮</Text>}
+        onPress={open}
+      />
+      {error ? <Txt variant="caption" color={colors.bad}>{error}</Txt> : null}
+    </View>
   );
 }
 
@@ -292,6 +327,7 @@ function GroupMark({ name, onFill }: { name: string; onFill?: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  adminGlyph: { fontSize: 26 },
   brand: { alignItems: "flex-start", gap: space(4), paddingTop: space(4) },
   wordmark: {
     fontFamily: fonts.display,
