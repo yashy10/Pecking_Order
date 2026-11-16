@@ -1,14 +1,15 @@
 import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { findUser, requireMember } from "./lib/auth";
 import { dayLabel, GROUP_NAME_MAX_CHARS } from "./lib/constants";
-import { isOpenGame, membersOf } from "./lib/day";
+import { isGroupCreator, isOpenGame, membersOf } from "./lib/day";
 import { phaseV } from "./schema";
 
 // The player's profile page and a group's settings: your stats across groups, renaming a
-// group, a fresh invite code, and leaving a group. Groups have no owner, so any member may
-// rename one or change its code.
+// group, a fresh invite code, leaving a group, and deleting it. Any member may rename a
+// group or change its code; only its creator may delete it for everyone.
 //
 // Hidden-board rules (PLAN §6.1) still hold here: a player sees only their own banked
 // points and streaks, never a rank. Crowns come from weekResults, which are public once a
@@ -147,10 +148,110 @@ export const leaveGroup = mutation({
     if (!group) throw new ConvexError("That group doesn't exist.");
     await removeSeat(ctx, group, me._id);
 
-    // Nobody real is left: stop the automatic clock so the group stops ticking.
+    // Nobody real is left: the group closes for good.
     const remaining = await membersOf(ctx, group._id);
-    if (group.autoClock && !remaining.some((m) => !m.isBot)) {
-      await ctx.db.patch("groups", group._id, { autoClock: false, nextTickAt: undefined });
+    if (!remaining.some((m) => !m.isBot)) await closeGroup(ctx, group);
+    return null;
+  },
+});
+
+/** The creator deletes the group for everyone: it vanishes from every member's list at once. */
+export const deleteGroup = mutation({
+  args: { token: v.string(), groupId: v.id("groups") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const me = await requireMember(ctx, args.token, args.groupId);
+    const group = await ctx.db.get("groups", args.groupId);
+    if (!group) throw new ConvexError("That group doesn't exist.");
+    if (!isGroupCreator(group, me, await membersOf(ctx, group._id))) {
+      throw new ConvexError("Only the person who made this group can delete it.");
+    }
+    await closeGroup(ctx, group);
+    return null;
+  },
+});
+
+/**
+ * Removes the group and every seat now, so it disappears from everyone's list and its
+ * invite code stops working; the rest (games, plays, questions, answers, powers, news,
+ * past standings) is cleared in the background, a batch at a time.
+ */
+async function closeGroup(ctx: MutationCtx, group: Doc<"groups">): Promise<void> {
+  const members = await membersOf(ctx, group._id);
+  for (const m of members) await ctx.db.delete("members", m._id);
+  await ctx.db.delete("groups", group._id);
+  await ctx.scheduler.runAfter(0, internal.profile.purgeGroup, {
+    groupId: group._id,
+    memberIds: members.map((m) => m._id),
+  });
+}
+
+const PURGE_BATCH = 200;
+
+/** Background clean-up after closeGroup. Reschedules itself until nothing is left. */
+export const purgeGroup = internalMutation({
+  args: { groupId: v.id("groups"), memberIds: v.array(v.id("members")) },
+  returns: v.null(),
+  handler: async (ctx, { groupId, memberIds }) => {
+    let budget = PURGE_BATCH;
+    const games = await ctx.db
+      .query("games")
+      .withIndex("by_groupId_and_week_and_day", (q) => q.eq("groupId", groupId))
+      .take(10);
+    for (const game of games) {
+      const plays = await ctx.db.query("plays").withIndex("by_gameId", (q) => q.eq("gameId", game._id)).take(budget);
+      for (const p of plays) await ctx.db.delete("plays", p._id);
+      budget -= plays.length;
+      if (budget <= 0) break;
+      await ctx.db.delete("games", game._id);
+    }
+    if (budget > 0) {
+      const prompts = await ctx.db
+        .query("prompts")
+        .withIndex("by_groupId_and_week_and_day", (q) => q.eq("groupId", groupId))
+        .take(10);
+      for (const prompt of prompts) {
+        const answers = await ctx.db.query("answers").withIndex("by_promptId", (q) => q.eq("promptId", prompt._id)).take(budget);
+        for (const a of answers) await ctx.db.delete("answers", a._id);
+        budget -= answers.length;
+        if (budget <= 0) break;
+        await ctx.db.delete("prompts", prompt._id);
+      }
+    }
+    if (budget > 0) {
+      const uses = await ctx.db
+        .query("powerUses")
+        .withIndex("by_groupId_and_week_and_day", (q) => q.eq("groupId", groupId))
+        .take(budget);
+      for (const u of uses) await ctx.db.delete("powerUses", u._id);
+      budget -= uses.length;
+    }
+    let remainingMembers = memberIds;
+    while (budget > 0 && remainingMembers.length > 0) {
+      const events = await ctx.db
+        .query("events")
+        .withIndex("by_memberId", (q) => q.eq("memberId", remainingMembers[0]))
+        .take(budget);
+      for (const e of events) await ctx.db.delete("events", e._id);
+      budget -= events.length;
+      if (events.length === 0) remainingMembers = remainingMembers.slice(1);
+    }
+    if (budget > 0) {
+      const results = await ctx.db
+        .query("weekResults")
+        .withIndex("by_groupId_and_week", (q) => q.eq("groupId", groupId))
+        .take(budget);
+      for (const r of results) await ctx.db.delete("weekResults", r._id);
+      budget -= results.length;
+    }
+    // Anything left (a full batch, or more games and questions than one pass reads): go again.
+    const leftover =
+      budget <= 0 ||
+      remainingMembers.length > 0 ||
+      (await ctx.db.query("games").withIndex("by_groupId_and_week_and_day", (q) => q.eq("groupId", groupId)).first()) !== null ||
+      (await ctx.db.query("prompts").withIndex("by_groupId_and_week_and_day", (q) => q.eq("groupId", groupId)).first()) !== null;
+    if (leftover) {
+      await ctx.scheduler.runAfter(0, internal.profile.purgeGroup, { groupId, memberIds: remainingMembers });
     }
     return null;
   },

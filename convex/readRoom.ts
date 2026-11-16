@@ -49,7 +49,7 @@ export async function createReadRoomGame(
 }
 
 /** The friends this player is asked about: never themself, at most four, in a fixed order. */
-function askedPicks(game: Doc<"games">, me: Id<"members">): Pick[] {
+export function askedPicks(game: Doc<"games">, me: Id<"members">): Pick[] {
   return (game.readRoom?.picks ?? []).filter((p) => p.memberId !== me).slice(0, READ_ROOM_FRIENDS);
 }
 

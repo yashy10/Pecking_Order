@@ -76,7 +76,7 @@ export async function createWhoSaidItGame(
 }
 
 /** The quotes this player is asked: never their own, at most four, in a fixed order. */
-function askedQuotes(game: Doc<"games">, memberId: Id<"members">): Quote[] {
+export function askedQuotes(game: Doc<"games">, memberId: Id<"members">): Quote[] {
   return (game.whoSaidIt?.quotes ?? []).filter((q) => q.authorId !== memberId).slice(0, WHO_SAID_IT_ASKED);
 }
 

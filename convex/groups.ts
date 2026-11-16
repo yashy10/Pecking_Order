@@ -78,6 +78,7 @@ export const create = mutation({
       day: start.day,
       phase: "open",
       autoClock: auto,
+      createdBy: profile.userId,
       ...(auto && start.weekStartsAt !== undefined
         ? {
             utcOffsetMinutes: offset,

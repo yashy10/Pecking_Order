@@ -70,6 +70,7 @@ export default defineSchema({
     day: v.number(), // 0 = Mon … 6 = Sun
     phase: phaseV,
     autoClock: v.boolean(), // true: the cron moves it on the real calendar; false: the demo panel does
+    createdBy: v.optional(v.id("users")), // who may delete it; missing on groups made before 2026-11-16
     nextTickAt: v.optional(v.number()),
     // Automatic groups only (convex/lib/schedule.ts): the creator's UTC offset in minutes,
     // and the instant this week's Monday began, local time.

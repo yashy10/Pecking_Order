@@ -13,8 +13,9 @@ import { errorMessage } from "@/utils/errors";
 import * as haptics from "@/utils/haptics";
 import { skipLaunchJump } from "@/screens/home";
 
-// A table's settings. Groups have no owner, so any member can rename the table or change
-// its invite code. Leaving deletes your seat in this group: points, streak, powers.
+// A table's settings. Any member can rename the table or change its invite code. Leaving
+// deletes your seat in this group: points, streak, powers. Whoever made the group can also
+// delete it for everyone.
 
 const GROUP_NAME_MAX = 30;
 
@@ -49,6 +50,7 @@ export function GroupSettings({ groupId }: { groupId: Id<"groups"> }) {
       <InviteCode groupId={groupId} code={today.group.inviteCode} />
       <YouHere />
       <Leave groupId={groupId} today={today} setLeft={setLeft} />
+      {today.group.canDelete ? <DeleteGroup groupId={groupId} today={today} setLeft={setLeft} /> : null}
     </Screen>
   );
 }
@@ -223,6 +225,57 @@ function Leave({ groupId, today, setLeft }: { groupId: Id<"groups">; today: Toda
       ) : (
         <View>
           <DangerButton label="Leave group" onPress={() => setAsking(true)} testID="leave-group" />
+        </View>
+      )}
+    </Section>
+  );
+}
+
+function DeleteGroup({ groupId, today, setLeft }: { groupId: Id<"groups">; today: Today; setLeft: (left: boolean) => void }) {
+  const token = useToken();
+  const remove = useMutation(api.profile.deleteGroup);
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { group } = today;
+
+  async function confirm() {
+    if (!token || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      setLeft(true);
+      await remove({ token, groupId });
+      haptics.warning();
+      skipLaunchJump();
+      router.replace("/");
+    } catch (e) {
+      setLeft(false);
+      setError(errorMessage(e));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Section title="Delete">
+      {asking ? (
+        <ConfirmCard
+          title={`Delete ${group.name} for everyone?`}
+          body={`All ${group.memberCount} ${group.memberCount === 1 ? "seat" : "seats"}, every score, answer and past week go for good, and the invite code stops working. This can't be undone.`}
+          confirmLabel="Delete group"
+          onConfirm={confirm}
+          onCancel={() => setAsking(false)}
+          busy={busy}
+          error={error}
+          destructive
+          testID="delete-group"
+        />
+      ) : (
+        <View>
+          <DangerButton label="Delete group" onPress={() => setAsking(true)} testID="delete-group" />
+          <Txt variant="caption" color={colors.muted}>
+            You made this group, so you can close it for everyone.
+          </Txt>
         </View>
       )}
     </Section>

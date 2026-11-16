@@ -3,7 +3,7 @@ import type { Doc } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import { findMember } from "./lib/auth";
 import { dayLabel, FRIENDS_FROM_WEEK, LAST_GAME_DAY, MAX_MEMBERS } from "./lib/constants";
-import { gamesFor, membersOf, promptFor } from "./lib/day";
+import { gamesFor, isGroupCreator, membersOf, promptFor } from "./lib/day";
 import { isFriendGame, maxPointsFor, promptShape } from "./lib/games";
 import { finaleAt } from "./lib/schedule";
 import { friendGameV, gameTypeV, phaseV, promptKindV, slotV } from "./schema";
@@ -31,6 +31,7 @@ export const get = query({
         // Automatic groups only; null for demo groups, which the presenter moves.
         nextTickAt: v.union(v.number(), v.null()),
         finaleAt: v.union(v.number(), v.null()), // this week's Sunday 9 PM
+        canDelete: v.boolean(), // I made this group, so I may delete it for everyone
       }),
       myMemberId: v.id("members"),
       // The friends game first, then the mini game. Empty on Sunday.
@@ -124,6 +125,7 @@ export const get = query({
         nextTickAt: group.autoClock ? (group.nextTickAt ?? null) : null,
         finaleAt:
           group.autoClock && group.weekStartsAt !== undefined ? finaleAt(group.weekStartsAt) : null,
+        canDelete: isGroupCreator(group, me, members),
       },
       myMemberId: me._id,
       games: gameRows,

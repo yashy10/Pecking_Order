@@ -61,7 +61,7 @@ export async function createMatchUpGame(
 }
 
 /** The pairs this player matches: never their own, at most four, in a fixed order. Fewer than three: nothing to play. */
-function askedPairs(game: Doc<"games">, me: Id<"members">): Pair[] {
+export function askedPairs(game: Doc<"games">, me: Id<"members">): Pair[] {
   const pairs = (game.matchUp?.pairs ?? []).filter((p) => p.authorId !== me).slice(0, MATCH_UP_PAIRS);
   return pairs.length >= MATCH_UP_MIN ? pairs : [];
 }

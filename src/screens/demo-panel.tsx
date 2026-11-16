@@ -1,13 +1,16 @@
 import { useConvex, useMutation, useQuery } from "convex/react";
+import * as Crypto from "expo-crypto";
+import * as Updates from "expo-updates";
 import { ConvexError } from "convex/values";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
+import type { FunctionReturnType } from "convex/server";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { GAME_INFO } from "@/components/game-info";
 import { Avatar, Button, Card, EmptyState, Field, Icon, Loading, Pill, Screen, Section, Txt } from "@/components/ui";
-import { colors, radius, space } from "@/theme";
+import { colors, fonts, pipeColors, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
 import { joinUrl } from "@/utils/links";
 import { getItem, setItem } from "@/utils/storage";
@@ -39,6 +42,9 @@ export function DemoPanel() {
   const grantPower = useMutation(api.demo.grantPower);
   const jumpToSunday = useMutation(api.demo.jumpToSunday);
   const resetWeek = useMutation(api.demo.resetWeek);
+  const claimDemoAccount = useMutation(api.demo.useDemoAccount);
+  const arcade = useMutation(api.demo.arcade);
+  const answerKey = useQuery(api.demo.answerKey, demoKey && groupId ? { demoKey, groupId } : "skip");
 
   useEffect(() => {
     (async () => {
@@ -274,6 +280,48 @@ export function DemoPanel() {
             </>
           ) : null}
 
+          <Section
+            title="Demo account"
+            footnote="For recording. Put the demo account on the phone you film, open the arcade there, and keep this panel on another screen for the answers."
+          >
+            <Card>
+              <Button
+                testID="demo-arcade"
+                label="New arcade: every game open today"
+                icon="plus"
+                loading={busy === "Arcade"}
+                disabled={busy !== null}
+                onPress={() =>
+                  run("Arcade", async () => {
+                    const r = await arcade({ demoKey: key });
+                    chooseGroup(r.groupId);
+                    return `Arcade ready: Game Night, all 11 games open, code ${r.inviteCode}. The demo account is already in it.`;
+                  })
+                }
+              />
+              <Button
+                testID="demo-use-account"
+                label="Use this device as the demo player"
+                variant="secondary"
+                loading={busy === "Account"}
+                disabled={busy !== null}
+                onPress={() =>
+                  run("Account", async () => {
+                    const token = (Crypto.randomUUID() + Crypto.randomUUID()).replace(/-/g, "");
+                    const who = await claimDemoAccount({ demoKey: key, token });
+                    await setItem("po_token", token);
+                    // The identity provider reads the token once, at launch: start the app again.
+                    if (Platform.OS === "web") globalThis.location?.assign("/");
+                    else await Updates.reloadAsync();
+                    return `This device is now ${who.emoji} ${who.name}.`;
+                  })
+                }
+              />
+            </Card>
+          </Section>
+
+          {answerKey ? <AnswerKey data={answerKey} /> : null}
+
           <Section title="Group">
             <Card>
               <Field
@@ -341,6 +389,51 @@ export function DemoPanel() {
   );
 }
 
+type KeyData = NonNullable<FunctionReturnType<typeof api.demo.answerKey>>;
+
+/** The demo account's answers for every game open today. Off camera, on the panel. */
+function AnswerKey({ data }: { data: KeyData }) {
+  if (data.entries.length === 0) return null;
+  return (
+    <Section title={`Answer key · ${data.player}`} footnote="Only the demo account's questions. Never on the recorded screen.">
+      {data.entries.map((e) => (
+        <Card key={e.gameId} testID={`key-${e.type}`}>
+          <View style={styles.row}>
+            <Txt variant="heading" style={styles.grow}>
+              {GAME_INFO[e.type].emoji} {GAME_INFO[e.type].name}
+            </Txt>
+            {e.done ? <Pill label="Played" tone="goodSoft" /> : null}
+          </View>
+          {e.lines.map((line, i) => (
+            <Txt key={i} variant="label" selectable>
+              {line}
+            </Txt>
+          ))}
+          {e.grid ? (
+            <View style={styles.keyGrid}>
+              {e.grid.map((row, r) => (
+                <View key={r} style={styles.keyRow}>
+                  {[...row].map((ch, c) => {
+                    const pipe = e.colors && ch !== "." ? pipeColors[ch.charCodeAt(0) - 65] : undefined;
+                    return (
+                      <View
+                        key={c}
+                        style={[styles.keyCell, ch === "#" && styles.keyBlack, pipe ? { backgroundColor: pipe } : null]}
+                      >
+                        {!e.colors && ch !== "#" ? <Text style={styles.keyChar}>{ch}</Text> : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </Card>
+      ))}
+    </Section>
+  );
+}
+
 const PHASE = { open: "Game open", revealed: "Scores revealed", finale: "Finale" } as const;
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -392,6 +485,19 @@ function Control({
 }
 
 const styles = StyleSheet.create({
+  keyGrid: { alignSelf: "flex-start", borderWidth: 1, borderColor: colors.border, borderRadius: radius.field, overflow: "hidden" },
+  keyRow: { flexDirection: "row" },
+  keyCell: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.sunken,
+  },
+  keyBlack: { backgroundColor: colors.ink },
+  keyChar: { fontFamily: fonts.mono, fontSize: 15, color: colors.ink },
   columns: { flexDirection: "row", flexWrap: "wrap", gap: space(5) },
   col: { flexGrow: 1, flexBasis: 360, gap: space(4) },
   center: { alignItems: "center", gap: space(2), paddingVertical: space(6) },

@@ -17,14 +17,17 @@ export async function gameFor(ctx: Ctx, groupId: Id<"groups">, week: number, day
     .first();
 }
 
-/** Every game on a day: the mini game, and from week 2 the friends game. At most a few. */
+/**
+ * Every game on a day: the mini game, and from week 2 the friends game. The demo arcade
+ * opens all eleven at once, so this allows a few more than a normal day needs.
+ */
 export async function gamesFor(ctx: Ctx, groupId: Id<"groups">, week: number, day: number) {
   return await ctx.db
     .query("games")
     .withIndex("by_groupId_and_week_and_day", (q) =>
       q.eq("groupId", groupId).eq("week", week).eq("day", day),
     )
-    .take(4);
+    .take(16);
 }
 
 export async function promptFor(ctx: Ctx, groupId: Id<"groups">, week: number, day: number) {
@@ -51,6 +54,15 @@ export function isOpenGame(group: Doc<"groups">, game: Doc<"games">): boolean {
     game.day === group.day &&
     game.revealedAt === undefined
   );
+}
+
+/**
+ * Whether this member made the group, and so may delete it. Groups made before creators
+ * were recorded count their earliest-joined real member as the creator.
+ */
+export function isGroupCreator(group: Doc<"groups">, me: Doc<"members">, members: Doc<"members">[]): boolean {
+  if (group.createdBy) return group.createdBy === me.userId;
+  return members.find((m) => !m.isBot)?._id === me._id;
 }
 
 /** Who has an active Ghost or Spy today. Powers last until the next day drops. */

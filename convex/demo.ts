@@ -2,12 +2,24 @@ import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { advanceGroup, revealDay, runFinale, startDay, startNewWeek } from "./clock";
+import { createBlurGame } from "./blur";
+import { CROSSWORD_PUZZLES } from "./content/crossword";
+import { FLOW_PUZZLES, FLOW_SOLUTIONS } from "./content/flow";
+import { KRILLION_PUZZLES, NOKRILLION_PUZZLES } from "./content/krillion";
+import { EITHER_PROMPTS, VOTE_PROMPTS } from "./content/prompts";
+import { SUDOKU_PUZZLES } from "./content/sudoku";
+import { WORDLE_PUZZLES } from "./content/wordle";
+import { askedPairs, createMatchUpGame } from "./matchUp";
+import { createMostLikelyGame } from "./mostLikely";
 import { createPrompt } from "./prompts";
+import { askedPicks, createReadRoomGame } from "./readRoom";
+import { askedQuotes, createWhoSaidItGame } from "./whoSaidIt";
 import { BANKED_POINTS, BOTS, cannedAnswers, WEDNESDAY_POINTS } from "./content/bots";
 import { profileById } from "./lib/auth";
-import { dayLabel, LAST_GAME_DAY, MAX_MEMBERS, WILDCARD_DAY } from "./lib/constants";
+import { dayLabel, LAST_GAME_DAY, MAX_MEMBERS, TOKEN_MIN_LENGTH, WILDCARD_DAY } from "./lib/constants";
 import { activePowers, byStanding, gamesFor, membersOf, newMemberDoc, promptFor } from "./lib/day";
-import { isFriendGame, maxPointsFor, promptShape } from "./lib/games";
+import { type FriendGame, isFriendGame, type MiniGame, maxPointsFor, promptShape } from "./lib/games";
+import { sharePercent } from "./lib/friends";
 import { finishPlay } from "./lib/scoring";
 import { gameTypeV, phaseV, powerTypeV } from "./schema";
 
@@ -549,3 +561,301 @@ export const buildFinishedWeek = internalMutation({
     return { groupId, inviteCode };
   },
 });
+
+// ---------------------------------------------------------------------------------------
+// The demo account and the arcade, for recording the demo video.
+//
+// The demo account is one ordinary player that the presenter can put on any device from the
+// panel. The arcade is a group where every game is open on the same day, with bots that have
+// already played and answered. The panel shows an answer key for the demo account's games,
+// so the device being recorded stays clean.
+
+const DEMO_USER_KEY = "demoUserId";
+const DEMO_PROFILE = { name: "Jamie", emoji: "🐔" };
+
+/** The demo account, created on first use. Its id lives in `settings`. */
+async function demoUser(ctx: MutationCtx): Promise<Doc<"users">> {
+  const row = await ctx.db.query("settings").withIndex("by_key", (q) => q.eq("key", DEMO_USER_KEY)).unique();
+  const existing = row ? await ctx.db.get("users", row.value as Id<"users">) : null;
+  if (existing) return existing;
+  const userId = await ctx.db.insert("users", {
+    ...DEMO_PROFILE,
+    token: `demo_${randomHex(60)}`,
+    isBot: false,
+    hasPass: true,
+    googleSub: "demo-account", // counts as signed in; real Google ids are numeric
+    needsProfile: false,
+  });
+  if (row) await ctx.db.patch("settings", row._id, { value: userId });
+  else await ctx.db.insert("settings", { key: DEMO_USER_KEY, value: userId });
+  const user = await ctx.db.get("users", userId);
+  if (!user) throw new ConvexError("Couldn't create the demo account.");
+  return user;
+}
+
+async function findDemoUserId(ctx: QueryCtx): Promise<Id<"users"> | null> {
+  const row = await ctx.db.query("settings").withIndex("by_key", (q) => q.eq("key", DEMO_USER_KEY)).unique();
+  return row ? (row.value as Id<"users">) : null;
+}
+
+/**
+ * Puts the demo account on this device: the device's fresh token becomes the demo
+ * account's token. Any device that held it before is signed out of it.
+ */
+export const useDemoAccount = mutation({
+  args: { demoKey: v.string(), token: v.string() },
+  returns: v.object({ name: v.string(), emoji: v.string() }),
+  handler: async (ctx, { demoKey, token }) => {
+    checkDemoKey(demoKey);
+    if (token.length < TOKEN_MIN_LENGTH) throw new ConvexError("That device token is too short.");
+    const taken = await ctx.db.query("users").withIndex("by_token", (q) => q.eq("token", token)).unique();
+    const user = await demoUser(ctx);
+    if (taken && taken._id !== user._id) throw new ConvexError("That token belongs to someone else.");
+    await ctx.db.patch("users", user._id, { token });
+    return { name: user.name, emoji: user.emoji };
+  },
+});
+
+/**
+ * A fresh arcade: every mini game and every friends game open today (Thursday of week 2,
+ * no multiplier), the demo account in it as the group's creator, twelve bots who have
+ * played and answered, and today's question open.
+ */
+export const arcade = mutation({
+  args: { demoKey: v.string(), name: v.optional(v.string()) },
+  returns: v.object({ groupId: v.id("groups"), inviteCode: v.string() }),
+  handler: async (ctx, { demoKey, name }) => {
+    checkDemoKey(demoKey);
+    const user = await demoUser(ctx);
+    const week = 2;
+    const day = 3;
+    const inviteCode = await uniqueInviteCode(ctx);
+    const groupId = await ctx.db.insert("groups", {
+      name: name?.trim() || "Game Night",
+      inviteCode,
+      week,
+      day,
+      phase: "open",
+      autoClock: false,
+      createdBy: user._id,
+    });
+    await ctx.db.insert("members", {
+      ...newMemberDoc(groupId, { userId: user._id, name: user.name, emoji: user.emoji, isBot: false, hasPass: user.hasPass }),
+      weekPoints: 240,
+      prevWeekPoints: 240,
+      streak: 4,
+    });
+    const banked = shuffle(BANKED_POINTS);
+    let n = 0;
+    for (const bot of BOTS) {
+      const profile = { name: bot.name, emoji: bot.emoji, isBot: true, hasPass: false };
+      const userId = await ctx.db.insert("users", { ...profile, token: `bot_${randomHex(60)}` });
+      const points = bot.idle ? 0 : banked[n++ % banked.length] * 3;
+      await ctx.db.insert("members", {
+        ...newMemberDoc(groupId, { ...profile, userId }),
+        weekPoints: points,
+        prevWeekPoints: points,
+        streak: bot.idle ? 0 : 3,
+      });
+    }
+    const bots = await playingBots(ctx, groupId);
+
+    // Four earlier questions, one per friends game, answered by the bots.
+    const sources: { day: number; week: number; kind: "text" | "vote" | "either"; feeds: FriendGame; question: string; options?: string[] }[] = [
+      { week: 1, day: 5, kind: "text", feeds: "matchUp", question: "What would you name a boat?" },
+      { week: 2, day: 0, kind: "text", feeds: "whoSaidIt", question: "What's the last thing that made you laugh out loud?" },
+      { week: 2, day: 1, kind: "vote", feeds: "mostLikely", question: VOTE_PROMPTS[0] },
+      { week: 2, day: 2, kind: "either", feeds: "readRoom", question: EITHER_PROMPTS[0].question, options: [...EITHER_PROMPTS[0].options] },
+    ];
+    const builders = {
+      whoSaidIt: createWhoSaidItGame,
+      mostLikely: createMostLikelyGame,
+      readRoom: createReadRoomGame,
+      matchUp: createMatchUpGame,
+    } as const;
+    const args = { groupId, week, day, multiplier: 1 };
+    for (const src of sources) {
+      const promptId = await ctx.db.insert("prompts", {
+        groupId,
+        week: src.week,
+        day: src.day,
+        question: src.question,
+        kind: src.kind,
+        feeds: src.feeds,
+        ...(src.options ? { options: src.options } : {}),
+      });
+      const prompt = await ctx.db.get("prompts", promptId);
+      if (!prompt) continue;
+      await botsAnswer(ctx, prompt, bots);
+      const built = await builders[src.feeds](ctx, args, (await ctx.db.get("prompts", promptId)) ?? prompt);
+      if (built) await ctx.db.patch("prompts", promptId, { usedAt: Date.now() });
+    }
+
+    // Every mini game, on its easiest puzzle.
+    const minis: { type: Exclude<MiniGame, "blur">; key: string }[] = [
+      { type: "wordle", key: WORDLE_PUZZLES[0].key },
+      { type: "flow", key: FLOW_PUZZLES[0].key },
+      { type: "krillion", key: KRILLION_PUZZLES[0].key },
+      { type: "nokrillion", key: NOKRILLION_PUZZLES[0].key },
+      { type: "sudoku", key: SUDOKU_PUZZLES[0].key },
+      { type: "crossword", key: CROSSWORD_PUZZLES[0].key },
+    ];
+    for (const m of minis) await ctx.db.insert("games", { ...args, type: m.type, puzzleKey: m.key });
+    await createBlurGame(ctx, args);
+    await createPrompt(ctx, { groupId, week, day });
+
+    const group = await loadGroup(ctx, groupId);
+    await botsPlayToday(ctx, group);
+    return { groupId, inviteCode };
+  },
+});
+
+const keyEntryV = v.object({
+  gameId: v.id("games"),
+  type: gameTypeV,
+  done: v.boolean(), // the demo account has finished it
+  lines: v.array(v.string()),
+  grid: v.union(v.null(), v.array(v.string())), // letters or digits, one string per row
+  colors: v.boolean(), // grid letters are Flow pipe colours (A = the first colour)
+});
+
+/**
+ * The answers to every game open today in this group, as the demo account would be asked
+ * them. For the panel only, behind the demo key, and never for a real player.
+ */
+export const answerKey = query({
+  args: { demoKey: v.string(), groupId: v.id("groups") },
+  returns: v.union(v.null(), v.object({ player: v.string(), entries: v.array(keyEntryV) })),
+  handler: async (ctx, { demoKey, groupId }) => {
+    if (!keyMatches(demoKey)) return null;
+    const group = await ctx.db.get("groups", groupId);
+    const demoId = await findDemoUserId(ctx);
+    if (!group || !demoId) return null;
+    const me = await ctx.db
+      .query("members")
+      .withIndex("by_groupId_and_userId", (q) => q.eq("groupId", groupId).eq("userId", demoId))
+      .unique();
+    if (!me) return null;
+    const members = new Map((await membersOf(ctx, groupId)).map((m) => [m._id, m]));
+    const nameOf = (id: Id<"members">) => members.get(id)?.name ?? "someone who left";
+    const textOf = async (answerId: Id<"answers">) => {
+      const a = await ctx.db.get("answers", answerId);
+      return a ? a.rewritten || a.text : "(gone)";
+    };
+
+    const entries = [];
+    for (const game of await gamesFor(ctx, groupId, group.week, group.day)) {
+      const play = await ctx.db
+        .query("plays")
+        .withIndex("by_gameId_and_memberId", (q) => q.eq("gameId", game._id).eq("memberId", me._id))
+        .unique();
+      const base = { gameId: game._id, type: game.type, done: play?.finishedAt !== undefined, grid: null, colors: false };
+      const lines: string[] = [];
+      let grid: string[] | null = null;
+      let colors = false;
+      switch (game.type) {
+        case "blur":
+          lines.push(`It's: ${game.blur?.answers[0] ?? "?"}`);
+          if (game.blur && game.blur.answers.length > 1) lines.push(`Also accepted: ${game.blur.answers.slice(1, 4).join(", ")}`);
+          break;
+        case "wordle": {
+          const w = WORDLE_PUZZLES.find((p) => p.key === game.puzzleKey);
+          lines.push(`Word: ${w?.word.toUpperCase() ?? "?"}`, "Open with any word, then type the answer for 2 of 6.");
+          break;
+        }
+        case "sudoku": {
+          const p = SUDOKU_PUZZLES.find((x) => x.key === game.puzzleKey);
+          if (p) grid = [0, 1, 2, 3, 4, 5].map((r) => p.solution.slice(r * 6, r * 6 + 6));
+          lines.push("Solution, row by row:");
+          break;
+        }
+        case "crossword": {
+          const p = CROSSWORD_PUZZLES.find((x) => x.key === game.puzzleKey);
+          if (p) {
+            grid = p.rows;
+            for (const e of crosswordEntries(p.rows)) lines.push(`${e.num}${e.dir} ${e.word}`);
+          }
+          break;
+        }
+        case "flow": {
+          const p = FLOW_PUZZLES.find((x) => x.key === game.puzzleKey);
+          const sol = game.puzzleKey ? FLOW_SOLUTIONS[game.puzzleKey] : undefined;
+          if (p && sol) {
+            const cells = Array<string>(p.size * p.size).fill(".");
+            for (const path of sol) {
+              const end = path[0];
+              const letter = p.rows[Math.floor(end / p.size)][end % p.size];
+              for (const c of path) cells[c] = letter;
+            }
+            grid = Array.from({ length: p.size }, (_, r) => cells.slice(r * p.size, r * p.size + p.size).join(""));
+            colors = true;
+            lines.push("Fill each square with its pipe's colour:");
+          }
+          break;
+        }
+        case "krillion":
+        case "nokrillion": {
+          const pool = game.type === "krillion" ? KRILLION_PUZZLES : NOKRILLION_PUZZLES;
+          const p = pool.find((x) => x.key === game.puzzleKey);
+          for (const round of p?.rounds ?? []) {
+            const best = game.type === "krillion" ? round.answers[round.answers.length - 1] : round.answers[0];
+            lines.push(`${round.prompt}: ${best?.names[0] ?? "?"}`);
+          }
+          break;
+        }
+        case "whoSaidIt":
+          for (const q of askedQuotes(game, me._id)) lines.push(`"${await textOf(q.answerId)}" → ${nameOf(q.authorId)}`);
+          break;
+        case "matchUp":
+          for (const pair of askedPairs(game, me._id)) lines.push(`"${await textOf(pair.answerId)}" → ${nameOf(pair.authorId)}`);
+          break;
+        case "mostLikely": {
+          const tally = [...(game.mostLikely?.tally ?? [])].filter((t) => t.votes > 0).sort((a, b) => b.votes - a.votes);
+          ["1st", "2nd", "3rd"].forEach((place, i) => {
+            if (tally[i]) lines.push(`${place}: ${nameOf(tally[i].memberId)} (${tally[i].votes} ${tally[i].votes === 1 ? "vote" : "votes"})`);
+          });
+          break;
+        }
+        case "readRoom": {
+          const rr = game.readRoom;
+          if (rr) {
+            const share = sharePercent(rr.picks.map((p) => p.choice));
+            lines.push(`Split: ${share}% "${rr.options[0]}" (set the slider to ${Math.round(share / 5) * 5}%)`);
+            for (const pick of askedPicks(game, me._id)) lines.push(`${nameOf(pick.memberId)} → ${rr.options[pick.choice] ?? "?"}`);
+          }
+          break;
+        }
+      }
+      entries.push({ ...base, lines, grid, colors });
+    }
+    return { player: me.name, entries };
+  },
+});
+
+/** Crossword entries with their numbers, in reading order: "1A CAB". */
+function crosswordEntries(rows: string[]): { num: number; dir: "A" | "D"; word: string }[] {
+  const size = rows.length;
+  const open = (r: number, c: number) => r >= 0 && c >= 0 && r < size && c < size && rows[r][c] !== "#";
+  const out: { num: number; dir: "A" | "D"; word: string }[] = [];
+  let num = 0;
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (!open(r, c)) continue;
+      const across = !open(r, c - 1) && open(r, c + 1);
+      const down = !open(r - 1, c) && open(r + 1, c);
+      if (!across && !down) continue;
+      num++;
+      if (across) {
+        let w = "";
+        for (let k = c; open(r, k); k++) w += rows[r][k];
+        out.push({ num, dir: "A", word: w });
+      }
+      if (down) {
+        let w = "";
+        for (let k = r; open(k, c); k++) w += rows[k][c];
+        out.push({ num, dir: "D", word: w });
+      }
+    }
+  }
+  return out.sort((a, b) => (a.dir === b.dir ? a.num - b.num : a.dir === "A" ? -1 : 1));
+}
