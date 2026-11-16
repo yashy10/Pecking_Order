@@ -22,7 +22,11 @@ export function CrewTab({ groupId }: { groupId: Id<"groups"> }) {
 }
 
 function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
-  const { group, played } = today;
+  const { group } = today;
+  // The busiest of today's games: how many have played at least that one.
+  const played = today.games.length
+    ? today.games.map((g) => g.played).reduce((a, b) => (b.count > a.count ? b : a))
+    : null;
   const token = useToken();
   const me = useQuery(api.users.me, token ? { token } : "skip");
   const preview = useQuery(api.groups.preview, { code: group.inviteCode });
@@ -110,7 +114,7 @@ function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
               </View>
             ) : null}
           </View>
-          {group.phase === "open" && today.game ? (
+          {group.phase === "open" && played ? (
             <Txt variant="caption" color={colors.muted}>
               {played.count === 0
                 ? "Nobody has played today yet."
@@ -152,7 +156,8 @@ function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
 }
 
 const RULES = [
-  { emoji: "🔍", title: "One game a day", body: "Blur most days: guess the photo as it sharpens. Faster is more points." },
+  { emoji: "🧩", title: "A mini game every day", body: "Wordle, Flow, Mini Sudoku, Mini Crossword, Krillion, Nokrillion and Blur, one a day. Up to 100 points." },
+  { emoji: "🗣️", title: "Friends games from week 2", body: "Answer the daily question. Your crew's answers become a second game each day, worth up to 200." },
   { emoji: "🔒", title: "Scores are sealed", body: "Nobody sees today's points until the evening reveal." },
   { emoji: "🃏", title: "Wildcard Wednesday", body: "Double points. A good day to catch up." },
   { emoji: "👻", title: "Ghost and Spy", body: "Vanish from rivals' boards, or peek further up yours. Earned, never bought." },
@@ -166,8 +171,8 @@ function weekLine(today: Today): string {
   const { day, phase } = today.group;
   if (phase === "finale") return "The week is over. The full board is on the Board tab.";
   if (day === 6) return "No game today. The full board drops tonight.";
-  if (phase === "revealed") return "Today's scores are in. The next game drops tomorrow.";
-  return `${DAY_NAMES[day]}'s game is open until tonight's reveal.`;
+  if (phase === "revealed") return "Today's scores are in. The next games drop tomorrow.";
+  return `${DAY_NAMES[day]}'s games are open until tonight's reveal.`;
 }
 
 function WeekStrip({ day, phase }: { day: number; phase: Today["group"]["phase"] }) {

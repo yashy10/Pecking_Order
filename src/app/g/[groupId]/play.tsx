@@ -1,18 +1,43 @@
 import { useQuery } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, type ComponentType } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import type { GameType } from "@/components/game-info";
 import { Button, EmptyState, Loading, Screen } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { BlurGame } from "@/screens/blur-game";
+import { CrosswordGame } from "@/screens/games/crossword-game";
+import { FlowGame } from "@/screens/games/flow-game";
+import { KrillionGame } from "@/screens/games/krillion-game";
+import { MatchUpGame } from "@/screens/games/match-up-game";
+import { MostLikelyGame } from "@/screens/games/most-likely-game";
+import { ReadRoomGame } from "@/screens/games/read-room-game";
+import { SudokuGame } from "@/screens/games/sudoku-game";
+import type { GameProps } from "@/screens/games/types";
+import { WordleGame } from "@/screens/games/wordle-game";
 import { WhoSaidItGame } from "@/screens/who-said-it-game";
 import { rememberGroup } from "@/utils/last-group";
 
-// Frozen in Phase 0. Owned by the lead. Picks today's game.
+// Owned by the lead. Plays one of today's games: `?game=<id>`, or else the first one
+// still to play (the friends game comes first).
+
+const SCREENS: Record<GameType, ComponentType<GameProps>> = {
+  blur: BlurGame,
+  flow: FlowGame,
+  wordle: WordleGame,
+  krillion: KrillionGame,
+  nokrillion: KrillionGame,
+  sudoku: SudokuGame,
+  crossword: CrosswordGame,
+  whoSaidIt: WhoSaidItGame,
+  mostLikely: MostLikelyGame,
+  readRoom: ReadRoomGame,
+  matchUp: MatchUpGame,
+};
 
 export default function PlayRoute() {
-  const { groupId } = useLocalSearchParams<{ groupId: string }>();
+  const { groupId, game: wanted } = useLocalSearchParams<{ groupId: string; game?: string }>();
   const id = groupId as Id<"groups">;
   const token = useToken();
   const today = useQuery(api.today.get, token ? { token, groupId: id } : "skip");
@@ -27,7 +52,12 @@ export default function PlayRoute() {
       </Screen>
     );
   }
-  if (today === null || !today.game) {
+  const games = today?.games ?? [];
+  const game =
+    games.find((g) => g.gameId === wanted) ??
+    games.find((g) => g.myPlay.status !== "done") ??
+    games[0];
+  if (today === null || !game) {
     return (
       <Screen back backTo={`/g/${id}`}>
         <EmptyState emoji="🌙" title="Nothing to play" body="There's no game right now. Check back when the next one drops.">
@@ -36,12 +66,8 @@ export default function PlayRoute() {
       </Screen>
     );
   }
-  const { gameId, type, multiplier } = today.game;
   // Automatic groups know when today's reveal is; demo groups reveal when the presenter says.
   const revealAt = today.group.phase === "open" ? today.group.nextTickAt : null;
-  return type === "blur" ? (
-    <BlurGame key={gameId} groupId={id} gameId={gameId} multiplier={multiplier} revealAt={revealAt} />
-  ) : (
-    <WhoSaidItGame key={gameId} groupId={id} gameId={gameId} multiplier={multiplier} revealAt={revealAt} />
-  );
+  const Game = SCREENS[game.type];
+  return <Game key={game.gameId} groupId={id} gameId={game.gameId} multiplier={game.multiplier} revealAt={revealAt} />;
 }

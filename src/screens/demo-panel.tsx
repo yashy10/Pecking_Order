@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { GAME_INFO } from "@/components/game-info";
 import { Avatar, Button, Card, EmptyState, Field, Icon, Loading, Pill, Screen, Section, Txt } from "@/components/ui";
 import { colors, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
@@ -159,8 +160,12 @@ export function DemoPanel() {
                 <Stat value={state.humans.length} label={state.humans.length === 1 ? "person" : "people"} />
                 <Stat value={state.botCount} label={state.botCount === 1 ? "bot" : "bots"} />
                 <Stat
-                  value={state.gameType ? state.playedCount : "—"}
-                  label={state.gameType ? `played ${state.gameType === "blur" ? "Blur" : "Who Said It"}` : "no game today"}
+                  value={state.games.length ? Math.min(...state.games.map((g) => g.played)) : "—"}
+                  label={
+                    state.games.length
+                      ? `played ${state.games.map((g) => GAME_INFO[g.type].name).join(" + ")}`
+                      : "no game today"
+                  }
                 />
               </View>
             </Card>

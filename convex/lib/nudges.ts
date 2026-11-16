@@ -1,3 +1,5 @@
+import type { GameType } from "./games";
+
 // What the notifications say. Owned by the lead. Pure, so the copy is tested and the
 // sender stays dumb. Short, playful, and never a rank or anyone's score: the board is
 // hidden, and a push shows on a lock screen.
@@ -7,7 +9,8 @@ export type Message = { title: string; body: string };
 
 export type NudgeFacts = {
   group: string;
-  game?: "blur" | "whoSaidIt";
+  /** The day's headline game: the friends game when there is one, else the mini game. */
+  game?: GameType;
   /** How many members have finished today's game, and how many there are. */
   played?: number;
   total?: number;
@@ -19,7 +22,19 @@ export type NudgeFacts = {
   youWon?: boolean;
 };
 
-const GAME_NAME = { blur: "Blur", whoSaidIt: "Who Said It" } as const;
+const GAME_NAME: Record<GameType, string> = {
+  blur: "Blur",
+  flow: "Flow",
+  wordle: "Wordle",
+  krillion: "Krillion",
+  nokrillion: "Nokrillion",
+  sudoku: "Mini Sudoku",
+  crossword: "Mini Crossword",
+  whoSaidIt: "Who Said It",
+  mostLikely: "Most Likely To",
+  readRoom: "Read the Room",
+  matchUp: "Match-Up",
+};
 
 /** A stable choice per seed, so a retry sends the same line and players see variety. */
 export function pick<T>(options: readonly T[], seed: string): T {

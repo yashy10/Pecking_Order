@@ -1,3 +1,4 @@
+import { useQuery } from "convex/react";
 import { router } from "expo-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -11,20 +12,26 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { GAME_INFO } from "@/components/game-info";
 import { NotifyCard } from "@/components/notify-card";
 import { Button, Card, Icon, Pill, Txt } from "@/components/ui";
+import { useToken } from "@/hooks/use-identity";
 import { useNow } from "@/hooks/use-now";
 import { colors, fonts, space } from "@/theme";
 import * as haptics from "@/utils/haptics";
 import { clockTime, eveningName } from "@/utils/time";
 
-// Owned by the lead. The moment a round ends, for Blur and Who Said It alike: the lock
-// snaps shut, the points count up, and the player is sent toward the Board, where the
-// suspense lives. Scores stay sealed, so this never says where anyone stands.
+// Owned by the lead. The moment a round ends, for every game alike: the lock snaps shut,
+// the points count up, and the player is sent on to today's other game if there is one,
+// otherwise toward the Board, where the suspense lives. Scores stay sealed, so this never
+// says where anyone stands.
 
 type Props = {
   groupId: Id<"groups">;
+  /** The game just played, so the other game today can be offered next. */
+  gameId?: Id<"games">;
   /** The sealed points, multiplier included. */
   points: number;
   multiplier: number;
@@ -40,7 +47,13 @@ type Props = {
 const COUNT_MS = 900;
 const LOCK_MS = 260;
 
-export function SealedResult({ groupId, points, multiplier, revealAt, onBack, testID, backTestID, children }: Props) {
+export function SealedResult({ groupId, gameId, points, multiplier, revealAt, onBack, testID, backTestID, children }: Props) {
+  const token = useToken();
+  const today = useQuery(api.today.get, token && gameId ? { token, groupId } : "skip");
+  const next =
+    today?.group.phase === "open"
+      ? today.games.find((g) => g.gameId !== gameId && g.myPlay.status !== "done")
+      : undefined;
   const reduced = useReducedMotion();
   const shown = useCountUp(points, reduced);
   const now = useNow(false);
@@ -104,8 +117,16 @@ export function SealedResult({ groupId, points, multiplier, revealAt, onBack, te
         </Txt>
   
         <View style={styles.actions}>
+          {next ? (
+            <Button
+              testID="play-next"
+              label={`Next: ${GAME_INFO[next.type].name}${next.slot === "friends" ? " · up to " + next.maxPoints * next.multiplier : ""}`}
+              onPress={() => router.replace(`/g/${groupId}/play?game=${next.gameId}`)}
+            />
+          ) : null}
           <Button
             testID="see-board"
+            variant={next ? "secondary" : "primary"}
             label="See the board"
             onPress={() => router.dismissTo(`/g/${groupId}/board`)}
           />

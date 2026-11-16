@@ -9,7 +9,7 @@ import { Button, Card, Txt } from "@/components/ui";
 import { colors } from "@/theme";
 
 // Owned by the lead. The Today tab: what to do right now. News from the last reveal,
-// today's game, and today's question (which feeds tomorrow's Who Said It).
+// today's games, and today's question (which feeds a later friends game).
 
 export function TodayTab({ groupId }: { groupId: Id<"groups"> }) {
   return (

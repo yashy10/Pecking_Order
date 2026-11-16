@@ -65,6 +65,7 @@ export function WhoSaidItGame({ groupId, gameId, multiplier, revealAt }: GamePro
     return (
       <Results
         groupId={groupId}
+        gameId={gameId}
         multiplier={multiplier}
         revealAt={revealAt}
         round={round}
@@ -177,6 +178,7 @@ export function WhoSaidItGame({ groupId, gameId, multiplier, revealAt }: GamePro
 
 function Results({
   groupId,
+  gameId,
   multiplier,
   revealAt,
   round,
@@ -185,6 +187,7 @@ function Results({
   onDone,
 }: {
   groupId: Id<"groups">;
+  gameId: Id<"games">;
   multiplier: number;
   revealAt: number | null;
   round: Round;
@@ -198,6 +201,7 @@ function Results({
       <SealedResult
         testID="wsi-result"
         groupId={groupId}
+        gameId={gameId}
         points={result.points}
         multiplier={multiplier}
         revealAt={revealAt}

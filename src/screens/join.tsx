@@ -55,7 +55,7 @@ export function Join({ code }: { code: string }) {
       const { groupId } = await join({ token, code });
       const today = await convex.query(api.today.get, { token, groupId });
       const unplayed =
-        today?.group.phase === "open" && today.game !== null && today.myPlay.status === "none";
+        today?.group.phase === "open" && today.games.some((g) => g.myPlay.status === "none");
       router.replace(unplayed ? `/g/${groupId}/play` : `/g/${groupId}`);
     } catch (e) {
       setError(errorMessage(e));

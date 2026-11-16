@@ -31,6 +31,9 @@ export const colors = {
   brassDim: "#8C6D1F",
 } as const;
 
+/** Flow's pipes: eight hues that stay distinct on the obsidian board. Game pieces, never text. */
+export const pipeColors = ["#E5484D", "#3E8EF7", "#3DD68C", "#F5D90A", "#F76B15", "#22C7DB", "#D864D8", "#E8E2D0"] as const;
+
 /** Translucent layers used by glass panels over the backdrop. */
 export const glass = {
   panel: "rgba(17, 21, 29, 0.86)",

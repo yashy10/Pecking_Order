@@ -4,7 +4,8 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
 import { requireUser } from "./lib/auth";
 import { MAX_MEMBERS, SUNDAY } from "./lib/constants";
-import { gameFor, membersOf } from "./lib/day";
+import { gamesFor, membersOf } from "./lib/day";
+import { isFriendGame } from "./lib/games";
 import { nudgeMessage, type Message, type NudgeFacts } from "./lib/nudges";
 import { at } from "./lib/schedule";
 
@@ -129,21 +130,29 @@ export const remind = internalMutation({
       return null;
     }
 
-    const game = await gameFor(ctx, groupId, week, day);
-    if (!game) return null;
-    const plays = await ctx.db
-      .query("plays")
-      .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
-      .take(MAX_MEMBERS);
-    const finished = new Set(plays.filter((p) => p.finishedAt !== undefined).map((p) => p.memberId));
+    // From week 2 there are two games a day. Someone is done once they've finished them all;
+    // "played" counts anyone who has finished at least one.
+    const games = await gamesFor(ctx, groupId, week, day);
+    if (games.length === 0) return null;
+    const finishedCount = new Map<Doc<"members">["_id"], number>();
+    for (const game of games) {
+      const plays = await ctx.db
+        .query("plays")
+        .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
+        .take(MAX_MEMBERS);
+      for (const p of plays) {
+        if (p.finishedAt !== undefined) finishedCount.set(p.memberId, (finishedCount.get(p.memberId) ?? 0) + 1);
+      }
+    }
+    const headline = games.find((g) => isFriendGame(g.type)) ?? games[0];
     const facts: NudgeFacts = {
       group: group.name,
-      game: game.type,
-      played: finished.size,
+      game: headline.type,
+      played: finishedCount.size,
       total: everyone.length,
-      wildcard: game.multiplier > 1,
+      wildcard: headline.multiplier > 1,
     };
-    const waiting = members.filter((m) => !finished.has(m._id));
+    const waiting = members.filter((m) => (finishedCount.get(m._id) ?? 0) < games.length);
     await sendTo(
       ctx,
       waiting.map((m) => ({ member: m, message: nudgeMessage(kind, facts, `${m._id}:${week}:${day}:${kind}`) })),
