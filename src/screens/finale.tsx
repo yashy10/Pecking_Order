@@ -147,7 +147,7 @@ function ordinal(n: number): string {
   return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
 }
 
-const BURST = ["🎉", "🐔", "✨", "👑", "🥚", "🎊", "⭐", "🐣", "🎉", "✨", "🐥", "🎊"];
+const BURST = ["🎉", "✨", "⭐", "👑", "🎊", "✨", "⭐", "🎉", "🎊", "✨", "⭐", "🎉"];
 
 /** A one-shot emoji burst, plain Reanimated, no library. */
 function Burst() {

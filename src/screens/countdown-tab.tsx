@@ -2,9 +2,9 @@ import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import type { Id } from "@convex/_generated/dataModel";
 import { GroupScreen } from "@/components/group-screen";
-import { Button, Card, Icon, Ornament, Section, Txt } from "@/components/ui";
+import { Button, Card, Icon, Mark, Section, Txt } from "@/components/ui";
 import { useNow } from "@/hooks/use-now";
-import { colors, fonts, radius, space } from "@/theme";
+import { colors, fonts, places, radius, space } from "@/theme";
 import type { Today } from "@/utils/convex";
 import { clockTime, eveningName, shortDuration, splitDuration, weekdayName } from "@/utils/time";
 
@@ -63,8 +63,8 @@ function Clock({ target, now }: { target: number; now: number }) {
   ];
   return (
     <Card tone="soft" testID="countdown" style={styles.hero}>
-      <Txt variant="overline" color={colors.accent}>
-        {left > 0 ? "The pecking order drops in" : "The pecking order drops"}
+      <Txt variant="overline" color={colors.muted}>
+        {left > 0 ? "The full board drops in" : "The full board drops"}
       </Txt>
       {left > 0 ? (
         <View
@@ -87,7 +87,6 @@ function Clock({ target, now }: { target: number; now: number }) {
           Any moment now
         </Txt>
       )}
-      <Ornament />
       <Txt color={colors.muted} align="center">
         {weekdayName(target)} at {clockTime(target)}: the full board, and a champion.
       </Txt>
@@ -100,8 +99,8 @@ function DaysLeft({ day }: { day: number }) {
   const left = Math.max(0, 6 - day);
   return (
     <Card tone="soft" testID="countdown" style={styles.hero}>
-      <Txt variant="overline" color={colors.accent}>
-        The pecking order drops
+      <Txt variant="overline" color={colors.muted}>
+        The full board drops
       </Txt>
       <Text style={styles.big}>{left === 0 ? "Tonight" : left}</Text>
       {left > 0 ? (
@@ -109,7 +108,6 @@ function DaysLeft({ day }: { day: number }) {
           {left === 1 ? "day to go" : "days to go"}
         </Txt>
       ) : null}
-      <Ornament />
       <Txt color={colors.muted} align="center">
         Sunday night: the full board, and a champion.
       </Txt>
@@ -120,8 +118,8 @@ function DaysLeft({ day }: { day: number }) {
 function ResultsAreIn({ groupId, week, nextWeekAt }: { groupId: Id<"groups">; week: number; nextWeekAt: number | null }) {
   return (
     <Card tone="soft" testID="countdown-finale" style={styles.hero}>
-      <Text style={styles.crown}>👑</Text>
-      <Txt variant="overline" color={colors.accent}>
+      <Mark icon="crown" tone="plain" />
+      <Txt variant="overline" color={colors.muted}>
         Week {week} is over
       </Txt>
       <Txt variant="display" align="center">
@@ -155,7 +153,7 @@ function WeekStrip({ day, phase }: { day: number; phase: Today["group"]["phase"]
             {sunday ? (
               <Text style={styles.cellCrown}>👑</Text>
             ) : done ? (
-              <Icon name="check" size={16} color={colors.primary} strokeWidth={2.6} />
+              <Icon name="check" size={16} color={colors.ink} strokeWidth={2.4} />
             ) : (
               <View style={[styles.dot, current && styles.dotNow]} />
             )}
@@ -200,19 +198,17 @@ const styles = StyleSheet.create({
     gap: space(1),
     paddingVertical: space(3),
     borderRadius: radius.tile,
-    backgroundColor: colors.sunken,
-    borderWidth: 1,
-    borderColor: "rgba(212, 175, 55, 0.25)",
+    backgroundColor: colors.surface,
   },
   digits: {
     fontFamily: fonts.display,
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 32,
+    lineHeight: 38,
+    letterSpacing: -0.5,
     color: colors.ink,
     fontVariant: ["tabular-nums"],
   },
-  big: { fontFamily: fonts.display, fontSize: 64, lineHeight: 72, color: colors.accent },
-  crown: { fontSize: 40 },
+  big: { fontFamily: fonts.display, fontSize: 64, lineHeight: 68, letterSpacing: -2, color: colors.ink },
   stretch: { alignSelf: "stretch" },
   week: { flexDirection: "row", gap: space(1.5) },
   cell: {
@@ -225,7 +221,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  cellDone: { backgroundColor: colors.primarySoft, borderColor: "rgba(212, 175, 55, 0.3)" },
+  cellDone: { backgroundColor: places.sunday.soft, borderColor: places.sunday.soft },
   cellNow: { borderColor: colors.accent, borderWidth: 1.5 },
   cellLabel: { letterSpacing: 1 },
   cellCrown: { fontSize: 16, lineHeight: 18 },
@@ -238,7 +234,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primarySoft,
+    backgroundColor: places.sunday.soft,
   },
   grow: { flex: 1 },
 });

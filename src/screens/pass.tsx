@@ -43,9 +43,9 @@ export function Pass() {
   }
 
   return (
-    <Screen back title="Season Pass">
+    <Screen place="today" back title="Season Pass">
       <Card tone="soft" style={styles.hero}>
-        <Avatar emoji={me?.emoji ?? "🐔"} size={80} hasPass />
+        <Avatar emoji={me?.emoji ?? "🙂"} size={80} hasPass />
         <Txt variant="title" align="center">
           Look the part
         </Txt>
@@ -62,7 +62,7 @@ export function Pass() {
           {PERKS.map((perk) => (
             <View key={perk} style={styles.perk}>
               <View style={styles.check}>
-                <Icon name="check" size={14} color={colors.primary} strokeWidth={2.6} />
+                <Icon name="check" size={14} color={colors.ink} strokeWidth={2.4} />
               </View>
               <Txt style={styles.grow}>{perk}</Txt>
             </View>

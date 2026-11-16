@@ -460,18 +460,25 @@ memory.remember, memory.squawk                                    internal actio
 
 ### 6.8 Look and feel
 
-Four agents will each invent a design unless the system is fixed first. Phase 0 fixed a light, cream look. On hackathon day the user replaced it with the dark "tabletop" theme from `docs/design/board_game_mobile_backdrop.html`. `src/theme.ts` is the source of truth.
+Four agents will each invent a design unless the system is fixed first. Phase 0 fixed a light, cream look; on hackathon day it became the dark "tabletop" theme; the user then replaced that with "Playground", described here. `src/theme.ts` is the source of truth.
 
-- **Dark by design.** The app paints its own obsidian background on every platform, and the status bar is light. `app.json` keeps `userInterfaceStyle: "light"`, because changing it needs a new native build.
-- **Colours:** background `#08090C` (obsidian), surface `#11151D`, raised `#171C26`, sunken `#0B0E13`, ink `#ECEEF2`, muted `#98A1B0`, primary `#D4AF37` (brass) with primaryInk `#17120A` on it, accent `#F3D878` (light brass), good `#5CC497` (emerald), bad `#E58263` (terracotta), fog `#262C37`, border `#222834`. Panels are translucent `glass` over the backdrop. Every text pairing clears WCAG AA. Body text is above 14:1; the lowest pairing, muted on fog, is 5.4:1.
-- **Type:** Cinzel Bold for display (32) and Cinzel SemiBold for titles (21). Overlines use JetBrains Mono at 11 in capitals. All three are bundled in `assets/fonts` under the OFL and loaded in the root layout. Everything else is the system font: heading 17/600, body 16/400, label 15/600, caption 13/500.
-- **Backdrop:** `Backdrop` draws the table in react-native-svg and Reanimated: a dot grid, glows, and pieces from five board games around the edges, with the centre kept clear. It is `full` on home and join and `subtle` everywhere else. Each instance gets its own SVG ids, because on the web stacked screens stay mounted and ids are global to the page.
-- **Shape:** cards radius 18, fields and buttons radius 12, tiles radius 14, 4-point spacing grid, 16 px screen gutter.
-- **People:** emoji on a dark token with a brass rim. The Season Pass adds a glowing brass ring.
+- **The idea.** It should read like a well-made daily puzzle app that a college student or an adult is happy to open: warm paper, near-black ink, quiet type, flat surfaces. One idea and one main button per screen. Colour appears only where it means something.
+- **Light by design.** The app paints its own paper background on every platform, and the status bar is dark. `app.json` keeps `userInterfaceStyle: "light"`.
+- **Base colours:** bg `#FAF8F3` (paper), surface `#FFFFFF`, raised `#EFECE4`, sunken `#F3F1EA`, ink `#16161A`, muted `#62626B`, border `#E4E0D6`, fog `#E9E7EE`, good `#0B7A54`, bad `#C2371F`.
+- **A colour per place.** `places` in the theme gives each area a `fill`, a `soft` tint and a text-safe `ink`: home coral `#FF7352`, today yellow `#F5C043`, board blue `#5B9DFF`, sunday violet `#A78BFA`, crew green `#3CCB8E`, blur orange `#FF9A3D`, quote pink `#F472B6`. `Screen` takes a `place` prop and provides it through context; `Card tone="soft"`, `GameButton tone="brass"`, `Button variant="tonal"`, `Mark` and the active tab read it. The place colour is used on the hero card, the active tab and small marks, and nowhere else.
+- **Contrast.** Accent fills always carry ink text, never white. Coloured text uses the place's `ink` shade. Every pairing clears WCAG AA (4.5:1). Do not use `colors.primary` (yellow) as a text or icon colour on the page.
+- **Type:** Bricolage Grotesque Bold for display (34) and SemiBold for titles (22); DM Sans for everything else: heading 17 SemiBold, body 16 Regular, label 15 SemiBold, caption 13.5. All bundled in `assets/fonts` under the OFL and loaded in the root layout. Each weight is its own font family: use `fonts.*` from the theme, never `fontWeight` with a custom family (Android fakes the bold).
+- **Buttons:** the main action is a black pill with white text. Secondary is a white pill with a hairline border, tonal is the place's tint, ghost is plain ink text. Pressing scales to 0.97.
+- **Shape:** cards radius 20 with a 1.5 px hairline border and no visible shadow, fields 14, tiles 16, 4-point spacing grid, 20 px screen gutter.
+- **Illustration:** there is no mascot. `Logo` is three stacked bars (an "order", the middle one fogged). `Mark` is a line icon in a circle. Icons come from `Icon`.
+- **Emoji** are for player avatars, the two powers and the finale confetti. Not for navigation, section art or buttons.
+- **Backdrop:** plain paper. `Backdrop` keeps its `variant` prop for callers, but both variants draw the same page.
+- **People:** emoji on a white token with a hairline rim. The Season Pass adds a yellow ring.
 - **QR codes:** always `#111` on `#FFF` with a white quiet zone. Inverted codes fail on some phone cameras.
-- **Motion and touch:** Reanimated springs for reveals. The backdrop's glow breathes and two pieces float, both off when the player asks for reduced motion. Haptics on a correct guess, a reveal and a power.
+- **Words:** plain and short. "Groups", not "tables". No exclamation marks. The hidden-board rules in §6.1 are unchanged.
+- **Motion and touch:** Reanimated springs for reveals, off when the player asks for reduced motion. Haptics on a correct guess, a reveal and a power.
 - **Web:** content column capped at 480 px and centred, so it reads as a phone app on a laptop.
-- **Primitives:** `Screen`, `Txt`, `Button`, `GameButton`, `Card`, `Field`, `Avatar`, `Pill`, `Backdrop`, `Ornament`. Screens use these and `src/theme.ts` and add no colours, fonts or UI libraries. Plain `StyleSheet`, as in your stack doc.
+- **Primitives:** `Screen`, `Txt`, `Button`, `GameButton`, `Card`, `Field`, `Avatar`, `Pill`, `Mark`, `Logo`, `Icon`, `Backdrop`. Screens use these and `src/theme.ts` and add no colours, fonts or UI libraries. Plain `StyleSheet`, as in your stack doc.
 
 ### 6.9 iPhone and Android
 

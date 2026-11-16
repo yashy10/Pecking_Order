@@ -63,11 +63,13 @@ validators in convex/ are the API contract: where the code and §6.7 differ, the
   quote's author before the player submits, or a token.
 - Only convex/lib/auth.ts and convex/users.ts may read the `users` table.
 - UI uses src/components/ui (Screen, Txt, Button, GameButton, Card, Field, Avatar, Pill,
-  Loading, Backdrop) and src/theme.ts. The look is the dark "tabletop" theme in docs/PLAN.md
-  §6.8, chosen by the user: obsidian and brass, Cinzel and JetBrains Mono. Do not bring back
-  the old light theme, and add no colours, fonts or UI libraries outside src/theme.ts. QR codes
-  stay #111 on #FFF with a white quiet zone. Leave `userInterfaceStyle: "light"` in app.json:
-  changing it needs a new native build, and the app paints its own dark background anyway.
+  Mark, Logo, Icon, Loading, Backdrop) and src/theme.ts. The look is the light "Playground"
+  theme in docs/PLAN.md §6.8, chosen by the user: warm paper, near-black ink, black pill
+  buttons, one accent colour per place, Bricolage Grotesque and DM Sans. Give each screen its
+  `place`. Do not bring back the dark tabletop theme or a mascot, and add no colours, fonts or
+  UI libraries outside src/theme.ts. Emoji are for player avatars, powers and the finale only.
+  Use `fonts.*` for weight, never `fontWeight` with a custom family. QR codes stay #111 on
+  #FFF with a white quiet zone. Leave `userInterfaceStyle: "light"` in app.json.
   It must work on iOS and Android in Expo Go and on web: wrap every screen in `Screen` (it owns
   safe areas, the keyboard and the backdrop), and do not use expo-symbols, expo-glass-effect,
   @expo/ui or `shadow*` styles.

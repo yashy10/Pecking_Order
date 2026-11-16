@@ -35,7 +35,7 @@ export function Join({ code }: { code: string }) {
 
   if (preview === null) {
     return (
-      <Screen back>
+      <Screen place="home" back>
         <EmptyState
           emoji="🧐"
           title="Code not found"
@@ -65,7 +65,7 @@ export function Join({ code }: { code: string }) {
 
   const extra = Math.max(0, preview.memberCount - preview.emojis.length);
   return (
-    <Screen backdrop="full">
+    <Screen place="home" backdrop="full">
       <Card tone="soft" style={styles.invite} testID="join-invite">
         <Txt variant="overline" color={colors.muted}>
           You're invited to

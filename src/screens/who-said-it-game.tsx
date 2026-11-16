@@ -9,7 +9,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { SealedResult } from "@/components/sealed-result";
 import { Avatar, Button, Card, EmptyState, Loading, Pill, Screen, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, radius, space } from "@/theme";
+import { colors, fonts, places, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
 import * as haptics from "@/utils/haptics";
 
@@ -41,14 +41,14 @@ export function WhoSaidItGame({ groupId, gameId, multiplier, revealAt }: GamePro
 
   if (round === undefined) {
     return (
-      <Screen back title="Who Said It" backTo={`/g/${groupId}`}>
+      <Screen place="quote" back title="Who Said It" backTo={`/g/${groupId}`}>
         <Loading label="Shuffling yesterday's answers…" />
       </Screen>
     );
   }
   if (round === null || round.quotes.length === 0) {
     return (
-      <Screen back title="Who Said It" backTo={`/g/${groupId}`}>
+      <Screen place="quote" back title="Who Said It" backTo={`/g/${groupId}`}>
         <EmptyState
           emoji="🤷"
           title="Nothing to guess"
@@ -112,7 +112,7 @@ export function WhoSaidItGame({ groupId, gameId, multiplier, revealAt }: GamePro
   }
 
   return (
-    <Screen
+    <Screen place="quote"
       back
       title="Who Said It"
       subtitle={`Quote ${current + 1} of ${quotes.length}`}
@@ -155,7 +155,7 @@ export function WhoSaidItGame({ groupId, gameId, multiplier, revealAt }: GamePro
               style={({ pressed }) => [styles.chip, selected && styles.chipOn, pressed && styles.chipPressed]}
             >
               <Avatar emoji={o.emoji} size={36} />
-              <Txt variant="heading" numberOfLines={1} style={styles.chipName} color={selected ? colors.accent : colors.ink}>
+              <Txt variant="heading" numberOfLines={1} style={styles.chipName} color={colors.ink}>
                 {o.name}
               </Txt>
             </Pressable>
@@ -194,7 +194,7 @@ function Results({
 }) {
   const byAnswer = new Map(result.reveal.map((r) => [r.answerId, r]));
   return (
-    <Screen back title="Who Said It" subtitle="Round over" backTo={`/g/${groupId}`}>
+    <Screen place="quote" back title="Who Said It" subtitle="Round over" backTo={`/g/${groupId}`}>
       <SealedResult
         testID="wsi-result"
         groupId={groupId}
@@ -244,10 +244,10 @@ function Results({
 const styles = StyleSheet.create({
   dots: { flexDirection: "row", justifyContent: "center", gap: space(2), paddingVertical: space(1) },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.fog },
-  dotPicked: { backgroundColor: colors.primary },
+  dotPicked: { backgroundColor: colors.ink },
   dotCurrent: { transform: [{ scale: 1.4 }] },
   quoteCard: { minHeight: 180, justifyContent: "center", gap: space(2), paddingVertical: space(6) },
-  quoteMark: { fontSize: 56, lineHeight: 48, color: colors.primary, fontWeight: "800" },
+  quoteMark: { fontFamily: fonts.display, fontSize: 56, lineHeight: 48, color: places.quote.fill },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space(2) },
   chip: {
     flexBasis: "47%",
@@ -259,10 +259,10 @@ const styles = StyleSheet.create({
     minHeight: 60,
     borderRadius: radius.tile,
     borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.09)",
-    backgroundColor: "rgba(18, 22, 30, 0.82)",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  chipOn: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  chipOn: { backgroundColor: places.quote.soft, borderColor: colors.ink },
   chipPressed: { transform: [{ scale: 0.98 }] },
   chipName: { flex: 1 },
   authorRow: { flexDirection: "row", alignItems: "center", gap: space(2) },

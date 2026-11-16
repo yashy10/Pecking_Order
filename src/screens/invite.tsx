@@ -27,7 +27,7 @@ export function Invite({ groupId }: { groupId: Id<"groups"> }) {
 
   if (!today) {
     return (
-      <Screen back title="Invite friends" backTo={`/g/${groupId}`}>
+      <Screen place="crew" back title="Invite friends" backTo={`/g/${groupId}`}>
         <ScreenSkeleton />
       </Screen>
     );
@@ -50,7 +50,7 @@ export function Invite({ groupId }: { groupId: Id<"groups"> }) {
   }
 
   return (
-    <Screen back title="Invite friends" subtitle={today.group.name} backTo={`/g/${groupId}`}>
+    <Screen place="crew" back title="Invite friends" subtitle={today.group.name} backTo={`/g/${groupId}`}>
       <Card style={styles.center}>
         <Txt color={colors.muted} align="center">
           Point a phone camera here to join

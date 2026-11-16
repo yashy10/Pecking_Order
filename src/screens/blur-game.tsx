@@ -115,7 +115,7 @@ export function BlurGame({ groupId, gameId, multiplier, revealAt }: GameProps) {
 
   if (error && !round) {
     return (
-      <Screen back title="Blur" backTo={`/g/${groupId}`}>
+      <Screen place="blur" back title="Blur" backTo={`/g/${groupId}`}>
         <EmptyState emoji="😵" title="Couldn't start the round" body={error}>
           <Button label="Back to the group" onPress={leave} />
         </EmptyState>
@@ -125,7 +125,7 @@ export function BlurGame({ groupId, gameId, multiplier, revealAt }: GameProps) {
 
   if (!round) {
     return (
-      <Screen back title="Blur" backTo={`/g/${groupId}`}>
+      <Screen place="blur" back title="Blur" backTo={`/g/${groupId}`}>
         <Loading label="Blurring today's photo…" />
       </Screen>
     );
@@ -137,7 +137,7 @@ export function BlurGame({ groupId, gameId, multiplier, revealAt }: GameProps) {
   const source = BLUR_IMAGE_SOURCES[round.imageKey];
 
   return (
-    <Screen
+    <Screen place="blur"
       back
       title="Blur"
       subtitle={result ? "Round over" : "Guess before it sharpens"}
@@ -159,7 +159,7 @@ export function BlurGame({ groupId, gameId, multiplier, revealAt }: GameProps) {
           )}
           {!result ? (
             <View style={styles.pointsChip} accessibilityLiveRegion="polite" accessibilityLabel={`${livePoints} points available`}>
-              <Txt variant="heading" tabular color={colors.accent}>
+              <Txt variant="heading" tabular>
                 {livePoints}
               </Txt>
               <Txt variant="caption" color={colors.muted}>
@@ -261,19 +261,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: space(3),
     paddingVertical: space(1),
     borderRadius: radius.pill,
-    backgroundColor: "rgba(8, 9, 12, 0.78)",
-    borderWidth: 1,
-    borderColor: "rgba(212, 175, 55, 0.4)",
+    backgroundColor: colors.surface,
   },
   track: {
     width: "100%",
     maxWidth: 400,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.sunken,
+    backgroundColor: colors.raised,
     overflow: "hidden",
   },
-  fill: { height: "100%", borderRadius: 3, backgroundColor: colors.primary },
+  fill: { height: "100%", borderRadius: 3, backgroundColor: colors.ink },
   guessRow: { flexDirection: "row", alignItems: "center", gap: space(2) },
   grow: { flex: 1 },
   wrongRow: { flexDirection: "row", alignItems: "center", gap: space(2) },
