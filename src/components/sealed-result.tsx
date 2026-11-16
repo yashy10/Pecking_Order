@@ -12,6 +12,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import type { Id } from "@convex/_generated/dataModel";
+import { NotifyCard } from "@/components/notify-card";
 import { Button, Card, Icon, Pill, Txt } from "@/components/ui";
 import { useNow } from "@/hooks/use-now";
 import { colors, fonts, space } from "@/theme";
@@ -74,42 +75,46 @@ export function SealedResult({ groupId, points, multiplier, revealAt, onBack, te
   const reveal = revealAt === null ? "tonight's reveal" : `${eveningName(revealAt, now)}'s reveal at ${clockTime(revealAt)}`;
 
   return (
-    <Card tone="soft" testID={testID} style={styles.card}>
-      <View style={styles.what}>{children}</View>
-
-      <View style={styles.lockWrap} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <Animated.View style={[styles.ring, ringStyle]} />
-        <Animated.View style={[styles.lock, !scored && styles.lockQuiet, lockStyle]}>
-          <Icon name="lock" size={30} color={scored ? colors.primaryInk : colors.muted} strokeWidth={2.4} />
-        </Animated.View>
-      </View>
-
-      <View style={styles.score} accessible accessibilityLabel={`${points} points sealed`}>
-        <Text style={[styles.points, !scored && styles.pointsQuiet]}>
-          {scored ? `+${shown}` : "0"}
-        </Text>
-        <Txt variant="title" align="center">
-          {scored ? "points sealed!" : "points sealed"}
+    <>
+      <Card tone="soft" testID={testID} style={styles.card}>
+        <View style={styles.what}>{children}</View>
+  
+        <View style={styles.lockWrap} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Animated.View style={[styles.ring, ringStyle]} />
+          <Animated.View style={[styles.lock, !scored && styles.lockQuiet, lockStyle]}>
+            <Icon name="lock" size={30} color={scored ? colors.primaryInk : colors.muted} strokeWidth={2.4} />
+          </Animated.View>
+        </View>
+  
+        <View style={styles.score} accessible accessibilityLabel={`${points} points sealed`}>
+          <Text style={[styles.points, !scored && styles.pointsQuiet]}>
+            {scored ? `+${shown}` : "0"}
+          </Text>
+          <Txt variant="title" align="center">
+            {scored ? "points sealed!" : "points sealed"}
+          </Txt>
+        </View>
+  
+        {scored && multiplier > 1 ? <Pill label={`×${multiplier} Wildcard Wednesday`} tone="soft" /> : null}
+  
+        <Txt color={colors.muted} align="center" style={styles.tease}>
+          {scored
+            ? `Did you just pass someone? Find out at ${reveal}.`
+            : "Nothing sealed this time. Tomorrow is a new round."}
         </Txt>
-      </View>
-
-      {scored && multiplier > 1 ? <Pill label={`×${multiplier} Wildcard Wednesday`} tone="soft" /> : null}
-
-      <Txt color={colors.muted} align="center" style={styles.tease}>
-        {scored
-          ? `Did you just pass someone? Find out at ${reveal}.`
-          : "Nothing sealed this time. Tomorrow is a new round."}
-      </Txt>
-
-      <View style={styles.actions}>
-        <Button
-          testID="see-board"
-          label="See the board"
-          onPress={() => router.dismissTo(`/g/${groupId}/board`)}
-        />
-        <Button testID={backTestID} variant="ghost" label="Back to today" onPress={onBack} />
-      </View>
-    </Card>
+  
+        <View style={styles.actions}>
+          <Button
+            testID="see-board"
+            label="See the board"
+            onPress={() => router.dismissTo(`/g/${groupId}/board`)}
+          />
+          <Button testID={backTestID} variant="ghost" label="Back to today" onPress={onBack} />
+        </View>
+      </Card>
+      {/* The best moment to ask: they just played and want to know how it lands. */}
+      {scored ? <NotifyCard variant="ask" /> : null}
+    </>
   );
 }
 

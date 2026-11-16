@@ -140,6 +140,17 @@ export default defineSchema({
     type: powerTypeV,
   }).index("by_groupId_and_week_and_day", ["groupId", "week", "day"]),
 
+  // Web push (convex/notifications.ts): one row per browser that turned reminders on.
+  // The endpoint is the browser's own push URL; p256dh and auth encrypt what we send it.
+  pushSubscriptions: defineTable({
+    userId: v.id("users"),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    auth: v.string(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_endpoint", ["endpoint"]),
+
   events: defineTable({
     groupId: v.id("groups"),
     memberId: v.id("members"), // who this line is for

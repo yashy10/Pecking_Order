@@ -6,6 +6,7 @@ import { Share, StyleSheet, Text, View } from "react-native";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { GroupScreen } from "@/components/group-screen";
+import { NotifyCard } from "@/components/notify-card";
 import { Avatar, Button, Card, Icon, type IconName, List, ListRow, Section, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, radius, space } from "@/theme";
@@ -145,6 +146,7 @@ function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
           />
         </List>
       </Section>
+      <NotifyCard variant="settings" />
     </>
   );
 }

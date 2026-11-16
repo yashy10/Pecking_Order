@@ -13,6 +13,7 @@ import {
 } from "./lib/constants";
 import { activePowers, byStanding, gameFor, membersOf, promptFor } from "./lib/day";
 import { nextTickAt, WEEK } from "./lib/schedule";
+import { scheduleReminders } from "./notifications";
 import { createPrompt } from "./prompts";
 import { createWhoSaidItGame } from "./whoSaidIt";
 
@@ -107,6 +108,8 @@ export async function advanceGroup(ctx: MutationCtx, groupId: Id<"groups">): Pro
       weekStartsAt,
       nextTickAt: nextTickAt({ day: moved.day, phase: moved.phase }, weekStartsAt),
     });
+    // A new day just opened: book its noon nudge and 7:30 last call (Sunday: a 6 PM tease).
+    if (moved.phase === "open") await scheduleReminders(ctx, { ...moved, weekStartsAt });
   }
 }
 
@@ -248,6 +251,8 @@ export async function revealDay(ctx: MutationCtx, group: Doc<"groups">): Promise
   if (game) await ctx.db.patch("games", game._id, { revealedAt: Date.now() });
   await ctx.db.patch("groups", groupId, { phase: "revealed" });
   if (prompt) await ctx.scheduler.runAfter(0, internal.ai.rewriteAnswers, { promptId: prompt._id });
+  // Every phone with reminders on hears about it ("Priya just passed you").
+  await ctx.scheduler.runAfter(0, internal.notifications.afterReveal, { groupId, week, day });
 }
 
 /** Sunday night: the full standings, written once, readable by everyone. */
@@ -267,6 +272,7 @@ export async function runFinale(ctx: MutationCtx, group: Doc<"groups">): Promise
   if (existing) await ctx.db.patch("weekResults", existing._id, { standings });
   else await ctx.db.insert("weekResults", { groupId: group._id, week: group.week, standings });
   await ctx.db.patch("groups", group._id, { day: SUNDAY, phase: "finale" });
+  await ctx.scheduler.runAfter(0, internal.notifications.afterFinale, { groupId: group._id, week: group.week });
 }
 
 /** Monday: weekly points reset, streaks and powers carry over. */
