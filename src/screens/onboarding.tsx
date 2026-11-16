@@ -68,6 +68,7 @@ export function Onboarding() {
   const me = useQuery(api.users.me, token ? { token } : "skip");
   const start = useMutation(api.users.startGoogleSignIn);
   const finish = useMutation(api.users.finishGoogleSignIn);
+  const guest = useMutation(api.users.startAsGuest);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -139,6 +140,20 @@ export function Onboarding() {
     }
   }
 
+  async function onGuest() {
+    if (!token || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await guest({ token });
+      // users.me updates by itself: the render below moves on to picking a name and bird.
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (me?.signedIn && !me.needsProfile) return <Redirect href={next} />;
 
   if (me?.signedIn && me.needsProfile) {
@@ -147,14 +162,14 @@ export function Onboarding() {
         <View style={styles.welcome}>
           <Logo size={44} />
           <Txt variant="display" align="center">
-            Hi, {me.name}
+            {me.guest ? "Welcome" : `Hi, ${me.name}`}
           </Txt>
         </View>
         <View style={styles.zone}>
           <ProfileForm
             title="Set up your profile"
             cta="Continue"
-            initialName={me.name}
+            initialName={me.guest ? "" : me.name}
             onSaved={() => router.replace(next)}
           />
         </View>
@@ -176,13 +191,23 @@ export function Onboarding() {
           <Skeleton height={52} />
         </View>
       ) : (
-        <Intro busy={busy} error={error} onGoogle={onGoogle} />
+        <Intro busy={busy} error={error} onGoogle={onGoogle} onGuest={onGuest} />
       )}
     </Screen>
   );
 }
 
-function Intro({ busy, error, onGoogle }: { busy: boolean; error: string | null; onGoogle: () => void }) {
+function Intro({
+  busy,
+  error,
+  onGoogle,
+  onGuest,
+}: {
+  busy: boolean;
+  error: string | null;
+  onGoogle: () => void;
+  onGuest: () => void;
+}) {
   const scroller = useRef<ScrollViewInstance>(null);
   const [width, setWidth] = useState(0);
   const [page, setPage] = useState(0);
@@ -243,12 +268,15 @@ function Intro({ busy, error, onGoogle }: { busy: boolean; error: string | null;
         <View style={styles.actions}>
           <Button testID="intro-next" label="Next" onPress={() => goTo(page + 1)} />
           <Button testID="intro-skip" label="Skip" variant="ghost" size="sm" onPress={() => goTo(last)} />
+          <Button testID="guest-quick" label="Play as a guest" variant="ghost" size="sm" onPress={onGuest} disabled={busy} />
         </View>
       ) : (
         <View style={styles.actions}>
           <GoogleButton onPress={onGoogle} loading={busy} />
+          <Button testID="guest" label="Play as a guest" variant="secondary" onPress={onGuest} disabled={busy} />
           <Txt variant="caption" color={colors.muted} align="center">
-            We only use your first name from Google. Your friends see the name and emoji you pick.
+            We only use your first name from Google. Your friends see the name and emoji you pick. Guests play
+            the same games, saved on this device only.
           </Txt>
         </View>
       )}

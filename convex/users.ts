@@ -27,8 +27,10 @@ export const me = query({
       name: v.string(),
       emoji: v.string(),
       hasPass: v.boolean(),
-      /** Linked to a Google account. Players who aren't go through onboarding. */
+      /** Linked to a Google account, or playing as a guest. Anyone else goes through onboarding. */
       signedIn: v.boolean(),
+      /** A guest: no Google account, so this device is the only way back in. */
+      guest: v.boolean(),
       /** A new Google player who hasn't picked their name and bird yet. */
       needsProfile: v.boolean(),
     }),
@@ -45,7 +47,8 @@ export const me = query({
       name: user.name,
       emoji: user.emoji,
       hasPass: user.hasPass,
-      signedIn: user.googleSub !== undefined,
+      signedIn: user.googleSub !== undefined || user.guest === true,
+      guest: user.googleSub === undefined && user.guest === true,
       needsProfile: user.needsProfile === true,
     };
   },
@@ -98,6 +101,39 @@ export const signOut = mutation({
       throw new ConvexError("Continue with Google first, so you can sign back in.");
     }
     await retireToken(ctx, user);
+    return null;
+  },
+});
+
+/**
+ * Play as a guest: no Google, the same game. Creates a player tied to this device's token;
+ * they pick a name and bird next (needsProfile), like a new Google player. Safe to call twice.
+ */
+export const startAsGuest = mutation({
+  args: { token: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { token }) => {
+    if (token.length < TOKEN_MIN_LENGTH) throw new ConvexError("This device has no sign-in yet.");
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .unique();
+    if (existing) {
+      // A player from before Google sign-in: keep their name, bird and groups, as a guest.
+      if (existing.googleSub === undefined && existing.guest !== true) {
+        await ctx.db.patch("users", existing._id, { guest: true });
+      }
+      return null;
+    }
+    await ctx.db.insert("users", {
+      token,
+      name: "Guest",
+      emoji: DEFAULT_EMOJI,
+      isBot: false,
+      hasPass: false,
+      guest: true,
+      needsProfile: true,
+    });
     return null;
   },
 });

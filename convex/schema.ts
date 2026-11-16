@@ -42,7 +42,8 @@ export default defineSchema({
     isBot: v.boolean(),
     hasPass: v.boolean(),
     googleSub: v.optional(v.string()), // Google account id; set by Continue with Google
-    needsProfile: v.optional(v.boolean()), // true until a new Google user picks their name and bird
+    needsProfile: v.optional(v.boolean()), // true until a new player picks their name and bird
+    guest: v.optional(v.boolean()), // played as a guest: no Google account, lives on this device only
   })
     .index("by_token", ["token"])
     .index("by_googleSub", ["googleSub"]),

@@ -106,7 +106,13 @@ export function Profile() {
       </Section>
 
       <Section title="Account">
-        <SignOut />
+        {me.guest ? (
+          <Txt variant="caption" color={colors.muted}>
+            You're playing as a guest. Your seat lives on this device only, so there's no signing out.
+          </Txt>
+        ) : (
+          <SignOut />
+        )}
       </Section>
     </Screen>
   );
