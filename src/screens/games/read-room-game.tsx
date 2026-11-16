@@ -161,14 +161,9 @@ export function ReadRoomGame({ groupId, gameId, multiplier, revealAt }: GameProp
             </View>
           </View>
           <ShareSlider value={share} onChange={setShare} label={a} />
-          <View style={styles.ends}>
-            <Txt variant="caption" color={colors.muted} numberOfLines={1} style={styles.grow}>
-              All “{b}”
-            </Txt>
-            <Txt variant="caption" color={colors.muted} numberOfLines={1} align="right" style={styles.grow}>
-              All “{a}”
-            </Txt>
-          </View>
+          <Txt variant="caption" color={colors.muted} align="center">
+            Drag right for more “{a}”, left for more “{b}”.
+          </Txt>
           <View style={styles.stepper}>
             <View style={styles.grow}>
               <Button
@@ -532,7 +527,6 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.6)",
   },
-  ends: { flexDirection: "row", gap: space(2), marginTop: -space(2) },
   stepper: { flexDirection: "row", gap: space(2) },
 
   guessChip: {

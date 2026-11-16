@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   row: { flexDirection: "row" },
-  cell: { alignItems: "center", justifyContent: "center", backgroundColor: colors.surface },
+  cell: { alignItems: "center", justifyContent: "center", backgroundColor: colors.fog },
   black: { backgroundColor: colors.bg },
   lineRight: { borderRightWidth: 1, borderRightColor: colors.border },
   lineBottom: { borderBottomWidth: 1, borderBottomColor: colors.border },
