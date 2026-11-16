@@ -17,6 +17,16 @@ export async function gameFor(ctx: Ctx, groupId: Id<"groups">, week: number, day
     .first();
 }
 
+/** Every game on a day: the mini game, and from week 2 the friends game. At most a few. */
+export async function gamesFor(ctx: Ctx, groupId: Id<"groups">, week: number, day: number) {
+  return await ctx.db
+    .query("games")
+    .withIndex("by_groupId_and_week_and_day", (q) =>
+      q.eq("groupId", groupId).eq("week", week).eq("day", day),
+    )
+    .take(4);
+}
+
 export async function promptFor(ctx: Ctx, groupId: Id<"groups">, week: number, day: number) {
   return await ctx.db
     .query("prompts")

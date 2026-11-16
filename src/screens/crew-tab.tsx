@@ -35,7 +35,9 @@ export function CrewTab({ groupId }: { groupId: Id<"groups"> }) {
 }
 
 function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
-  const { group, played } = today;
+  const { group } = today;
+  // Anyone who has finished at least one of today's games.
+  const playedToday = Math.max(0, ...today.games.map((g) => g.played.count));
   const token = useToken();
   const me = useQuery(api.users.me, token ? { token } : "skip");
   const preview = useQuery(api.groups.preview, { code: group.inviteCode });
@@ -126,11 +128,11 @@ function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
               </View>
             ) : null}
           </View>
-          {group.phase === "open" && today.game ? (
+          {group.phase === "open" && today.games.length > 0 ? (
             <Txt variant="caption" color={colors.muted}>
-              {played.count === 0
+              {playedToday === 0
                 ? "Nobody has played today yet."
-                : `${played.count} of ${group.memberCount} played today. Scores stay sealed until the reveal.`}
+                : `${playedToday} of ${group.memberCount} played today. Scores stay sealed until the reveal.`}
             </Txt>
           ) : null}
         </Card>

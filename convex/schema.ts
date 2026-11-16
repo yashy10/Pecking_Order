@@ -3,7 +3,27 @@ import { v } from "convex/values";
 
 // Frozen in Phase 0. Owned by the lead. See docs/PLAN.md §6.6.
 
-export const gameTypeV = v.union(v.literal("blur"), v.literal("whoSaidIt"));
+// Mini games: one a day, every week. Preset puzzles, worth up to 100.
+export const miniGameV = v.union(
+  v.literal("blur"),
+  v.literal("flow"),
+  v.literal("wordle"),
+  v.literal("krillion"),
+  v.literal("nokrillion"),
+  v.literal("sudoku"),
+  v.literal("crossword"),
+);
+// Friends games: from week 2, built from the group's own answers. Worth up to 200.
+export const friendGameV = v.union(
+  v.literal("whoSaidIt"),
+  v.literal("mostLikely"),
+  v.literal("readRoom"),
+  v.literal("matchUp"),
+);
+export const gameTypeV = v.union(miniGameV, friendGameV);
+export const slotV = v.union(v.literal("mini"), v.literal("friends"));
+// The shape of the daily question: a written answer, a vote for a friend, or this-or-that.
+export const promptKindV = v.union(v.literal("text"), v.literal("vote"), v.literal("either"));
 export const phaseV = v.union(v.literal("open"), v.literal("revealed"), v.literal("finale"));
 export const powerTypeV = v.union(v.literal("ghost"), v.literal("spy"));
 export const eventKindV = v.union(
@@ -99,6 +119,27 @@ export default defineSchema({
         ),
       }),
     ),
+    // Mini puzzles: the key of a preset in convex/content (the puzzle and its solution stay there).
+    puzzleKey: v.optional(v.string()),
+    // Friends games. Like whoSaidIt, these never leave the server as stored.
+    sourcePromptId: v.optional(v.id("prompts")),
+    mostLikely: v.optional(
+      v.object({
+        // Every member who got a vote, most votes first, then members on 0 votes who pad
+        // the candidate list to eight, or the whole group if smaller (convex/lib/friends.ts).
+        tally: v.array(v.object({ memberId: v.id("members"), votes: v.number() })),
+        voters: v.number(),
+      }),
+    ),
+    readRoom: v.optional(
+      v.object({
+        options: v.array(v.string()), // [this, that]
+        picks: v.array(v.object({ memberId: v.id("members"), choice: v.number() })),
+      }),
+    ),
+    matchUp: v.optional(
+      v.object({ pairs: v.array(v.object({ answerId: v.id("answers"), authorId: v.id("members") })) }),
+    ),
     revealedAt: v.optional(v.number()),
   }).index("by_groupId_and_week_and_day", ["groupId", "week", "day"]),
 
@@ -111,6 +152,8 @@ export default defineSchema({
     wrongGuesses: v.number(),
     points: v.optional(v.number()), // set on finish; sealed until the reveal
     detail: v.optional(v.string()), // e.g. "3 of 4"
+    // Turn-based mini games (Wordle guesses, Krillion answers), in order. Server-owned.
+    guesses: v.optional(v.array(v.string())),
   })
     .index("by_gameId", ["gameId"])
     .index("by_gameId_and_memberId", ["gameId", "memberId"]),
@@ -120,6 +163,10 @@ export default defineSchema({
     week: v.number(),
     day: v.number(),
     question: v.string(),
+    kind: v.optional(promptKindV), // missing means "text"
+    options: v.optional(v.array(v.string())), // "either" only: the two sides
+    feeds: v.optional(friendGameV), // the friends game these answers are meant for
+    usedAt: v.optional(v.number()), // set once a friends game has been built from it
   }).index("by_groupId_and_week_and_day", ["groupId", "week", "day"]),
 
   answers: defineTable({
@@ -127,7 +174,9 @@ export default defineSchema({
     groupId: v.id("groups"),
     memberId: v.id("members"),
     text: v.string(),
-    rewritten: v.optional(v.string()), // filled in by the AI action
+    rewritten: v.optional(v.string()), // filled in by the AI action ("text" prompts only)
+    choice: v.optional(v.number()), // "either": 0 or 1
+    voteFor: v.optional(v.id("members")), // "vote": who they picked
   })
     .index("by_promptId", ["promptId"])
     .index("by_promptId_and_memberId", ["promptId", "memberId"]),

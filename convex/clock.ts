@@ -3,7 +3,14 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, type MutationCtx } from "./_generated/server";
 import { createBlurGame } from "./blur";
+import { CROSSWORD_PUZZLES } from "./content/crossword";
+import { FLOW_PUZZLES } from "./content/flow";
+import { KRILLION_PUZZLES, NOKRILLION_PUZZLES } from "./content/krillion";
+import { SUDOKU_PUZZLES } from "./content/sudoku";
+import { WORDLE_PUZZLES } from "./content/wordle";
 import {
+  FRIEND_LOOKBACK_DAYS,
+  FRIENDS_FROM_WEEK,
   LAST_GAME_DAY,
   PROMPT_BONUS,
   STREAK_SPY_EVERY,
@@ -11,10 +18,14 @@ import {
   WILDCARD_DAY,
   WILDCARD_MULTIPLIER,
 } from "./lib/constants";
-import { activePowers, byStanding, gameFor, membersOf, promptFor } from "./lib/day";
+import { activePowers, byStanding, gamesFor, membersOf, promptFor } from "./lib/day";
+import { type FriendGame, miniGameFor, promptShape, puzzleIndex } from "./lib/games";
 import { nextTickAt, WEEK } from "./lib/schedule";
+import { createMatchUpGame } from "./matchUp";
+import { createMostLikelyGame } from "./mostLikely";
 import { scheduleReminders } from "./notifications";
 import { createPrompt } from "./prompts";
+import { createReadRoomGame } from "./readRoom";
 import { createWhoSaidItGame } from "./whoSaidIt";
 
 // The game clock. Owned by the lead. See docs/PLAN.md §6.2.
@@ -122,7 +133,7 @@ async function step(ctx: MutationCtx, group: Doc<"groups">): Promise<void> {
   await startDay(ctx, group._id, group.week, next); // nothing to create on Sunday
 }
 
-/** Creates a day's game and prompt. Safe to call twice. */
+/** Creates a day's games and question. Safe to call twice. */
 export async function startDay(
   ctx: MutationCtx,
   groupId: Id<"groups">,
@@ -130,29 +141,93 @@ export async function startDay(
   day: number,
 ): Promise<void> {
   if (day > LAST_GAME_DAY) return;
-  if (await gameFor(ctx, groupId, week, day)) return;
-  const multiplier = day === WILDCARD_DAY ? WILDCARD_MULTIPLIER : 1;
+  if ((await gamesFor(ctx, groupId, week, day)).length > 0) return;
+  const args = { groupId, week, day, multiplier: day === WILDCARD_DAY ? WILDCARD_MULTIPLIER : 1 };
+  // The friends game first: it reads earlier questions, and today's must not be one of them.
+  if (week >= FRIENDS_FROM_WEEK) await createFriendGame(ctx, args);
+  await createMiniGame(ctx, args);
   await createPrompt(ctx, { groupId, week, day });
-  let gameId: Id<"games"> | null = null;
-  if (day % 2 === 1) gameId = await createWhoSaidItGame(ctx, { groupId, week, day, multiplier });
-  if (!gameId) await createBlurGame(ctx, { groupId, week, day, multiplier });
+}
+
+type DayArgs = { groupId: Id<"groups">; week: number; day: number; multiplier: number };
+
+const PUZZLE_POOLS = {
+  flow: FLOW_PUZZLES,
+  wordle: WORDLE_PUZZLES,
+  krillion: KRILLION_PUZZLES,
+  nokrillion: NOKRILLION_PUZZLES,
+  sudoku: SUDOKU_PUZZLES,
+  crossword: CROSSWORD_PUZZLES,
+} as const;
+
+/** Today's mini game, from the schedule in lib/games.ts. */
+async function createMiniGame(ctx: MutationCtx, args: DayArgs): Promise<Id<"games">> {
+  const type = miniGameFor(args.week, args.day);
+  if (type === "blur") return await createBlurGame(ctx, args);
+  const pool: readonly { key: string }[] = PUZZLE_POOLS[type];
+  if (pool.length === 0) return await createBlurGame(ctx, args);
+  const puzzle = pool[puzzleIndex(pool.length, args.week)];
+  return await ctx.db.insert("games", { ...args, type, puzzleKey: puzzle.key });
+}
+
+const FRIEND_BUILDERS: Record<
+  FriendGame,
+  (ctx: MutationCtx, args: DayArgs, prompt: Doc<"prompts">) => Promise<Id<"games"> | null>
+> = {
+  whoSaidIt: createWhoSaidItGame,
+  mostLikely: createMostLikelyGame,
+  readRoom: createReadRoomGame,
+  matchUp: createMatchUpGame,
+};
+
+/**
+ * Today's friends game, from the latest earlier question that has enough answers and
+ * hasn't been used yet: usually yesterday's, otherwise one from the days before (week 1's
+ * answers included). No such question, no friends game today.
+ */
+async function createFriendGame(ctx: MutationCtx, args: DayArgs): Promise<Id<"games"> | null> {
+  let week = args.week;
+  let day = args.day;
+  for (let back = 0; back < FRIEND_LOOKBACK_DAYS; back++) {
+    day -= 1;
+    if (day < 0) {
+      week -= 1;
+      day = LAST_GAME_DAY;
+    }
+    if (week < 1) return null;
+    const prompt = await promptFor(ctx, args.groupId, week, day);
+    if (!prompt || prompt.usedAt !== undefined) continue;
+    const gameId = await FRIEND_BUILDERS[promptShape(prompt).feeds](ctx, args, prompt);
+    if (gameId) {
+      await ctx.db.patch("prompts", prompt._id, { usedAt: Date.now() });
+      return gameId;
+    }
+  }
+  return null;
 }
 
 /** The daily reveal: banks sealed points, streaks, powers and "passed you" lines. */
 export async function revealDay(ctx: MutationCtx, group: Doc<"groups">): Promise<void> {
   const { _id: groupId, week, day } = group;
-  const game = await gameFor(ctx, groupId, week, day);
+  const games = await gamesFor(ctx, groupId, week, day);
   const prompt = await promptFor(ctx, groupId, week, day);
   const members = await membersOf(ctx, groupId);
 
   const results = new Map<Id<"members">, { points: number; played: boolean; answered: boolean }>();
   for (const m of members) {
-    const play = game
-      ? await ctx.db
-          .query("plays")
-          .withIndex("by_gameId_and_memberId", (q) => q.eq("gameId", game._id).eq("memberId", m._id))
-          .unique()
-      : null;
+    // Every game today counts: the mini game and the friends game add up.
+    let points = 0;
+    let played = false;
+    for (const game of games) {
+      const play = await ctx.db
+        .query("plays")
+        .withIndex("by_gameId_and_memberId", (q) => q.eq("gameId", game._id).eq("memberId", m._id))
+        .unique();
+      if (play && play.finishedAt !== undefined) {
+        points += play.points ?? 0;
+        played = true;
+      }
+    }
     const answer = prompt
       ? await ctx.db
           .query("answers")
@@ -161,12 +236,7 @@ export async function revealDay(ctx: MutationCtx, group: Doc<"groups">): Promise
           )
           .unique()
       : null;
-    const finished = play !== null && play.finishedAt !== undefined;
-    results.set(m._id, {
-      points: play && play.finishedAt !== undefined ? (play.points ?? 0) : 0,
-      played: finished,
-      answered: answer !== null,
-    });
+    results.set(m._id, { points, played, answered: answer !== null });
   }
   const best = Math.max(0, ...[...results.values()].map((r) => r.points));
 
@@ -248,9 +318,11 @@ export async function revealDay(ctx: MutationCtx, group: Doc<"groups">): Promise
     }
   }
 
-  if (game) await ctx.db.patch("games", game._id, { revealedAt: Date.now() });
+  for (const game of games) await ctx.db.patch("games", game._id, { revealedAt: Date.now() });
   await ctx.db.patch("groups", groupId, { phase: "revealed" });
-  if (prompt) await ctx.scheduler.runAfter(0, internal.ai.rewriteAnswers, { promptId: prompt._id });
+  if (prompt && promptShape(prompt).kind === "text") {
+    await ctx.scheduler.runAfter(0, internal.ai.rewriteAnswers, { promptId: prompt._id });
+  }
   // Every phone with reminders on hears about it ("Priya just passed you").
   await ctx.scheduler.runAfter(0, internal.notifications.afterReveal, { groupId, week, day });
 }

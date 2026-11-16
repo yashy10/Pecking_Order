@@ -67,7 +67,7 @@ validators in convex/ are the API contract: where the code and §6.7 differ, the
   theme in docs/PLAN.md §6.8, chosen by the user: warm paper, near-black ink, black pill
   buttons, one accent colour per place, Bricolage Grotesque and DM Sans. Give each screen its
   `place`. Do not bring back the dark tabletop theme or a mascot, and add no colours, fonts or
-  UI libraries outside src/theme.ts. Emoji are for player avatars, powers and the finale only.
+  UI libraries outside src/theme.ts. Emoji are for player avatars, game symbols, powers and the finale only.
   Use `fonts.*` for weight, never `fontWeight` with a custom family. QR codes stay #111 on
   #FFF with a white quiet zone. Leave `userInterfaceStyle: "light"` in app.json.
   It must work on iOS and Android in Expo Go and on web: wrap every screen in `Screen` (it owns

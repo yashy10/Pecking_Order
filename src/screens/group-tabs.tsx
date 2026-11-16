@@ -31,7 +31,7 @@ export function GroupTabs({ groupId }: { groupId: Id<"groups"> }) {
     if (member) rememberGroup(groupId);
   }, [member, groupId]);
 
-  const toPlay = !!today?.game && today.group.phase === "open" && today.myPlay.status !== "done";
+  const toPlay = today?.group.phase === "open" && today.games.some((g) => g.myPlay.status !== "done");
   const finale = today?.group.phase === "finale";
   const base = `/g/${groupId}`;
   // On a wide window, keep the tabs inside the same 480-point column as the content.

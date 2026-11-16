@@ -8,8 +8,10 @@ import {
   WHO_SAID_IT_MAX_QUOTES,
   WHO_SAID_IT_MIN_AUTHORS,
   WHO_SAID_IT_OPTIONS,
+  FRIEND_MAX_POINTS,
 } from "./lib/constants";
-import { isOpenGame, membersOf, promptFor } from "./lib/day";
+import { isOpenGame, membersOf } from "./lib/day";
+import { promptShape } from "./lib/games";
 import { finishPlay } from "./lib/scoring";
 
 // Track C (built by the lead). See docs/PLAN.md §8 (Track C).
@@ -28,17 +30,16 @@ function shuffle<T>(items: readonly T[]): T[] {
 }
 
 /**
- * Builds a round from the previous game day's answers. Needs answers from at least
- * three members, otherwise returns null and the clock falls back to Blur. Decoy
- * names come from other people who answered first, so every option is plausible.
+ * Builds a round from an earlier question's written answers (clock.ts picks which).
+ * Needs answers from at least three members, otherwise returns null. Decoy names come
+ * from other people who answered first, so every option is plausible.
  */
 export async function createWhoSaidItGame(
   ctx: MutationCtx,
   args: { groupId: Id<"groups">; week: number; day: number; multiplier: number },
+  prompt: Doc<"prompts">,
 ): Promise<Id<"games"> | null> {
-  if (args.day < 1) return null;
-  const prompt = await promptFor(ctx, args.groupId, args.week, args.day - 1);
-  if (!prompt) return null;
+  if (promptShape(prompt).kind !== "text") return null;
   const answers = await ctx.db
     .query("answers")
     .withIndex("by_promptId", (q) => q.eq("promptId", prompt._id))
@@ -69,6 +70,7 @@ export async function createWhoSaidItGame(
     day: args.day,
     type: "whoSaidIt",
     multiplier: args.multiplier,
+    sourcePromptId: prompt._id,
     whoSaidIt: { quotes },
   });
 }
@@ -170,7 +172,7 @@ export const get = query({
   },
 });
 
-/** One shot: scored as round(100 × correct / asked) through finishPlay, then the authors. */
+/** One shot: scored as round(200 × correct / asked) through finishPlay, then the authors. */
 export const submit = mutation({
   args: {
     token: v.string(),
@@ -192,7 +194,7 @@ export const submit = mutation({
     const asked = askedQuotes(game, me._id);
     const pickOf = new Map(picks.map((p) => [p.answerId, p.memberId]));
     const correct = asked.filter((q) => pickOf.get(q.answerId) === q.authorId).length;
-    const base = asked.length > 0 ? Math.round((100 * correct) / asked.length) : 0;
+    const base = asked.length > 0 ? Math.round((FRIEND_MAX_POINTS * correct) / asked.length) : 0;
 
     const playId = await ctx.db.insert("plays", {
       gameId,

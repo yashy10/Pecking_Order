@@ -2,12 +2,17 @@ import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { advanceGroup, revealDay, runFinale, startDay, startNewWeek } from "./clock";
+import { createPrompt } from "./prompts";
 import { BANKED_POINTS, BOTS, cannedAnswers, WEDNESDAY_POINTS } from "./content/bots";
 import { profileById } from "./lib/auth";
 import { dayLabel, LAST_GAME_DAY, MAX_MEMBERS, WILDCARD_DAY } from "./lib/constants";
-import { activePowers, byStanding, gameFor, membersOf, newMemberDoc, promptFor } from "./lib/day";
+import { activePowers, byStanding, gamesFor, membersOf, newMemberDoc, promptFor } from "./lib/day";
+import { isFriendGame, maxPointsFor, promptShape } from "./lib/games";
 import { finishPlay } from "./lib/scoring";
 import { gameTypeV, phaseV, powerTypeV } from "./schema";
+
+/** The demo group plays week 2, so it has a friends game as well as a mini game. */
+const DEMO_WEEK = 2;
 
 // Owned by the lead. Demo controls (PLAN §9). Every function needs DEMO_KEY,
 // set with `npx convex env set DEMO_KEY <words>`; without it a curious judge
@@ -70,15 +75,19 @@ async function uniqueInviteCode(ctx: MutationCtx): Promise<string> {
   throw new ConvexError("Couldn't find a free invite code. Try again.");
 }
 
-/** Removes one day's game, prompt and power uses, so the day can be dropped again. */
+/** Removes one day's games, prompt and power uses, so the day can be dropped again. */
 async function clearDay(ctx: MutationCtx, group: Doc<"groups">, day: number): Promise<void> {
-  const game = await gameFor(ctx, group._id, group.week, day);
-  if (game) {
+  for (const game of await gamesFor(ctx, group._id, group.week, day)) {
     const plays = await ctx.db
       .query("plays")
       .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
       .take(MAX_MEMBERS);
     for (const p of plays) await ctx.db.delete("plays", p._id);
+    // The question it was built from can feed a game again.
+    if (game.sourcePromptId) {
+      const source = await ctx.db.get("prompts", game.sourcePromptId);
+      if (source) await ctx.db.patch("prompts", source._id, { usedAt: undefined });
+    }
     await ctx.db.delete("games", game._id);
   }
   const prompt = await promptFor(ctx, group._id, group.week, day);
@@ -99,55 +108,94 @@ async function clearDay(ctx: MutationCtx, group: Doc<"groups">, day: number): Pr
   for (const u of uses) await ctx.db.delete("powerUses", u._id);
 }
 
-/** Every playing bot without a play or an answer today gets one. */
-async function botsPlayToday(ctx: MutationCtx, group: Doc<"groups">) {
-  const game = await gameFor(ctx, group._id, group.week, group.day);
-  const prompt = await promptFor(ctx, group._id, group.week, group.day);
-  const answers = shuffle(cannedAnswers(prompt?.question));
-  const bots = (await membersOf(ctx, group._id)).filter((m) => m.isBot && !IDLE_BOTS.has(m.name));
-  let played = 0;
+/** A bot's sealed score for one game: a mini game is out of 100, a friends game out of 200. */
+function botPoints(game: Doc<"games">): number {
+  const max = maxPointsFor(game.type);
+  return Math.round(max * (0.3 + Math.random() * 0.65) * game.multiplier);
+}
+
+/**
+ * A bot's answer to a question of any shape. Votes lean toward the first few members, so
+ * Most Likely To has a clear winner; this-or-that leans 2 to 1, so Read the Room isn't a coin toss.
+ */
+function botAnswer(
+  prompt: Doc<"prompts">,
+  bot: Doc<"members">,
+  i: number,
+  lines: string[],
+  members: Doc<"members">[],
+): { text: string; rewritten?: string; choice?: number; voteFor?: Id<"members"> } {
+  const { kind } = promptShape(prompt);
+  if (kind === "vote") {
+    const others = members.filter((m) => m._id !== bot._id);
+    const favourite = Math.random() < 0.6 ? others.slice(0, 3) : others;
+    const pick = favourite[Math.floor(Math.random() * favourite.length)] ?? others[0];
+    return { text: pick.name, voteFor: pick._id };
+  }
+  if (kind === "either") {
+    const choice = Math.random() < 0.65 ? 0 : 1;
+    return { text: prompt.options?.[choice] ?? "", choice };
+  }
+  const text = lines[i % lines.length];
+  return { text, rewritten: text };
+}
+
+async function botsAnswer(ctx: MutationCtx, prompt: Doc<"prompts">, bots: Doc<"members">[]): Promise<number> {
+  const members = await membersOf(ctx, prompt.groupId);
+  const lines = shuffle(cannedAnswers(prompt.question));
   let answered = 0;
   for (const [i, bot] of bots.entries()) {
-    if (game && game.revealedAt === undefined) {
+    const existing = await ctx.db
+      .query("answers")
+      .withIndex("by_promptId_and_memberId", (q) => q.eq("promptId", prompt._id).eq("memberId", bot._id))
+      .unique();
+    if (existing) continue;
+    await ctx.db.insert("answers", {
+      promptId: prompt._id,
+      groupId: prompt.groupId,
+      memberId: bot._id,
+      ...botAnswer(prompt, bot, i, lines, members),
+    });
+    answered++;
+  }
+  return answered;
+}
+
+async function playingBots(ctx: MutationCtx, groupId: Id<"groups">) {
+  return (await membersOf(ctx, groupId)).filter((m) => m.isBot && !IDLE_BOTS.has(m.name));
+}
+
+/** Every playing bot without a play or an answer today gets one. */
+async function botsPlayToday(ctx: MutationCtx, group: Doc<"groups">) {
+  const games = await gamesFor(ctx, group._id, group.week, group.day);
+  const prompt = await promptFor(ctx, group._id, group.week, group.day);
+  const bots = await playingBots(ctx, group._id);
+  let played = 0;
+  for (const bot of bots) {
+    let playedAny = false;
+    for (const game of games) {
+      if (game.revealedAt !== undefined) continue;
       const existing = await ctx.db
         .query("plays")
         .withIndex("by_gameId_and_memberId", (q) => q.eq("gameId", game._id).eq("memberId", bot._id))
         .unique();
-      if (!existing) {
-        const now = Date.now();
-        await ctx.db.insert("plays", {
-          gameId: game._id,
-          groupId: group._id,
-          memberId: bot._id,
-          startedAt: now,
-          finishedAt: now,
-          wrongGuesses: 0,
-          points: Math.round((30 + Math.floor(Math.random() * 66)) * game.multiplier),
-          detail: "bot",
-        });
-        played++;
-      }
+      if (existing) continue;
+      const now = Date.now();
+      await ctx.db.insert("plays", {
+        gameId: game._id,
+        groupId: group._id,
+        memberId: bot._id,
+        startedAt: now,
+        finishedAt: now,
+        wrongGuesses: 0,
+        points: botPoints(game),
+        detail: "bot",
+      });
+      playedAny = true;
     }
-    if (prompt) {
-      const existing = await ctx.db
-        .query("answers")
-        .withIndex("by_promptId_and_memberId", (q) =>
-          q.eq("promptId", prompt._id).eq("memberId", bot._id),
-        )
-        .unique();
-      if (!existing) {
-        const text = answers[i % answers.length];
-        await ctx.db.insert("answers", {
-          promptId: prompt._id,
-          groupId: group._id,
-          memberId: bot._id,
-          text,
-          rewritten: text,
-        });
-        answered++;
-      }
-    }
+    if (playedAny) played++;
   }
+  const answered = prompt ? await botsAnswer(ctx, prompt, bots) : 0;
   return { played, answered };
 }
 
@@ -165,11 +213,11 @@ export const state = query({
       day: v.number(),
       dayLabel: v.string(),
       phase: phaseV,
-      gameType: v.union(gameTypeV, v.null()),
+      // Today's games, friends game first, with how many have finished each.
+      games: v.array(v.object({ type: gameTypeV, played: v.number() })),
       multiplier: v.number(),
       humans: v.array(humanV),
       botCount: v.number(),
-      playedCount: v.number(),
     }),
   ),
   handler: async (ctx, { demoKey, groupId }) => {
@@ -177,15 +225,20 @@ export const state = query({
     const group = await ctx.db.get("groups", groupId);
     if (!group) return null;
     const members = await membersOf(ctx, groupId);
-    const game = await gameFor(ctx, groupId, group.week, group.day);
-    let playedCount = 0;
-    if (game) {
+    const games = [];
+    for (const game of await gamesFor(ctx, groupId, group.week, group.day)) {
       const plays = await ctx.db
         .query("plays")
         .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
         .take(MAX_MEMBERS);
-      playedCount = plays.filter((p) => p.finishedAt !== undefined).length;
+      games.push({
+        type: game.type,
+        played: plays.filter((p) => p.finishedAt !== undefined).length,
+        friends: isFriendGame(game.type),
+        multiplier: game.multiplier,
+      });
     }
+    games.sort((a, b) => Number(b.friends) - Number(a.friends));
     return {
       name: group.name,
       inviteCode: group.inviteCode,
@@ -193,13 +246,12 @@ export const state = query({
       day: group.day,
       dayLabel: dayLabel(group.day),
       phase: group.phase,
-      gameType: game?.type ?? null,
-      multiplier: game?.multiplier ?? 1,
+      games: games.map((g) => ({ type: g.type, played: g.played })),
+      multiplier: games[0]?.multiplier ?? 1,
       humans: members
         .filter((m) => !m.isBot)
         .map((m) => ({ memberId: m._id, name: m.name, emoji: m.emoji })),
       botCount: members.filter((m) => m.isBot).length,
-      playedCount,
     };
   },
 });
@@ -219,16 +271,16 @@ export const groupByCode = query({
 });
 
 /**
- * New demo group: Wildcard Wednesday with a ×2 Blur open, ten bots with Monday
- * and Tuesday banked and Wednesday already played, two bots that never play,
- * and canned answers to today's question.
+ * New demo group: Wildcard Wednesday of week 2, so there's a ×2 mini game and a ×2
+ * friends game built from Tuesday's question. Ten bots with Monday and Tuesday banked and
+ * Wednesday already played, two bots that never play, and bot answers to today's question.
  */
 export const seed = mutation({
   args: { demoKey: v.string(), name: v.optional(v.string()) },
   returns: v.object({ groupId: v.id("groups"), inviteCode: v.string() }),
   handler: async (ctx, { demoKey, name }) => {
     checkDemoKey(demoKey);
-    const week = 1;
+    const week = DEMO_WEEK;
     const inviteCode = await uniqueInviteCode(ctx);
     const groupId = await ctx.db.insert("groups", {
       name: name?.trim() || "The Roost",
@@ -238,10 +290,6 @@ export const seed = mutation({
       phase: "open",
       autoClock: false,
     });
-    await startDay(ctx, groupId, week, WILDCARD_DAY);
-    const game = await gameFor(ctx, groupId, week, WILDCARD_DAY);
-    const prompt = await promptFor(ctx, groupId, week, WILDCARD_DAY);
-    const answers = shuffle(cannedAnswers(prompt?.question));
     const banked = shuffle(BANKED_POINTS);
     const wednesday = shuffle(WEDNESDAY_POINTS);
 
@@ -249,33 +297,42 @@ export const seed = mutation({
     for (const bot of BOTS) {
       const profile = { name: bot.name, emoji: bot.emoji, isBot: true, hasPass: false };
       const userId = await ctx.db.insert("users", { ...profile, token: `bot_${randomHex(60)}` });
-      const points = bot.idle ? 0 : banked[n];
-      const memberId = await ctx.db.insert("members", {
+      // Two games a day from week 2, so two days banked is about twice the old total.
+      const points = bot.idle ? 0 : banked[n] * 2;
+      await ctx.db.insert("members", {
         ...newMemberDoc(groupId, { ...profile, userId }),
         weekPoints: points,
         prevWeekPoints: points,
         streak: bot.idle ? 0 : 2,
       });
-      if (bot.idle) continue;
-      const now = Date.now();
-      if (game) {
+      if (!bot.idle) n++;
+    }
+    const bots = await playingBots(ctx, groupId);
+
+    // Tuesday's question, answered by the bots: today's friends game is built from it.
+    const tuesday = await ctx.db.get("prompts", await createPrompt(ctx, { groupId, week, day: WILDCARD_DAY - 1 }));
+    if (tuesday) await botsAnswer(ctx, tuesday, bots);
+    await startDay(ctx, groupId, week, WILDCARD_DAY);
+
+    const games = await gamesFor(ctx, groupId, week, WILDCARD_DAY);
+    for (const [i, bot] of bots.entries()) {
+      for (const game of games) {
+        const now = Date.now();
         await ctx.db.insert("plays", {
           gameId: game._id,
           groupId,
-          memberId,
+          memberId: bot._id,
           startedAt: now,
           finishedAt: now,
           wrongGuesses: 0,
-          points: wednesday[n],
+          // Already doubled. The friends game is worth twice the mini game.
+          points: isFriendGame(game.type) ? wednesday[i % wednesday.length] * 2 : wednesday[i % wednesday.length],
           detail: "bot",
         });
       }
-      if (prompt) {
-        const text = answers[n % answers.length];
-        await ctx.db.insert("answers", { promptId: prompt._id, groupId, memberId, text, rewritten: text });
-      }
-      n++;
     }
+    const prompt = await promptFor(ctx, groupId, week, WILDCARD_DAY);
+    if (prompt) await botsAnswer(ctx, prompt, bots);
     return { groupId, inviteCode };
   },
 });
@@ -454,13 +511,14 @@ export const buildFinishedWeek = internalMutation({
       cast.push({ memberId, week: bot.week, answers: true, skipsQuestion: bot.skipsQuestion });
     }
 
+    const members = await membersOf(ctx, groupId);
     for (let day = 0; day <= LAST_GAME_DAY; day++) {
-      const game = await gameFor(ctx, groupId, week, day);
+      const games = await gamesFor(ctx, groupId, week, day);
       const prompt = await promptFor(ctx, groupId, week, day);
       const lines = shuffle(cannedAnswers(prompt?.question));
       for (const [i, player] of cast.entries()) {
         const base = player.week[day];
-        if (game) {
+        for (const game of games) {
           const now = Date.now();
           const playId = await ctx.db.insert("plays", {
             gameId: game._id,
@@ -470,13 +528,18 @@ export const buildFinishedWeek = internalMutation({
             wrongGuesses: 0,
           });
           const play = await ctx.db.get("plays", playId);
-          const detail =
-            game.type === "whoSaidIt" ? `${Math.round(base / 25)} of 4` : base > 0 ? "Correct" : "Out of time";
-          if (play) await finishPlay(ctx, play, { basePoints: base, detail });
+          const detail = isFriendGame(game.type) ? `${Math.round(base / 25)} of 4` : base > 0 ? "Solved" : "Out of time";
+          const scaled = Math.round((base * maxPointsFor(game.type)) / 100);
+          if (play) await finishPlay(ctx, play, { basePoints: scaled, detail });
         }
-        if (prompt && player.answers && !player.skipsQuestion.includes(day)) {
-          const text = lines[i % lines.length];
-          await ctx.db.insert("answers", { promptId: prompt._id, groupId, memberId: player.memberId, text, rewritten: text });
+        const bot = members.find((m) => m._id === player.memberId);
+        if (prompt && bot && player.answers && !player.skipsQuestion.includes(day)) {
+          await ctx.db.insert("answers", {
+            promptId: prompt._id,
+            groupId,
+            memberId: player.memberId,
+            ...botAnswer(prompt, bot, i, lines, members),
+          });
         }
       }
       await advanceGroup(ctx, groupId); // 9 PM: the reveal

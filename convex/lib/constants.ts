@@ -27,6 +27,24 @@ export const WHO_SAID_IT_MAX_QUOTES = 6;
 export const WHO_SAID_IT_ASKED = 4;
 export const WHO_SAID_IT_OPTIONS = 4;
 
+// Points. The friends game is worth twice a mini game.
+export const MINI_MAX_POINTS = 100;
+export const FRIEND_MAX_POINTS = 200;
+/** From this week on, every game day also has a friends game. Week 1 is mini games only. */
+export const FRIENDS_FROM_WEEK = 2;
+/** Timed puzzles (Flow, Sudoku, Crossword): full points up to par, then a slow slide to the floor. */
+export const PUZZLE_MIN_POINTS = 30;
+export const PUZZLE_MS_PER_POINT_LOST = 2_000;
+export const PUZZLE_CHECK_PENALTY = 5;
+
+// Friends games
+export const FRIEND_MIN_ANSWERS = 3; // a question needs this many answers to become a game
+export const MATCH_UP_PAIRS = 4;
+export const READ_ROOM_FRIENDS = 4;
+export const MOST_LIKELY_PODIUM = 3;
+/** How many earlier game days a friends game may reach back for unused answers. */
+export const FRIEND_LOOKBACK_DAYS = 6;
+
 // Rewards and powers
 export const PROMPT_BONUS = 10;
 export const STREAK_SPY_EVERY = 3;

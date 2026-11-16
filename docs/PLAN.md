@@ -471,7 +471,7 @@ Four agents will each invent a design unless the system is fixed first. Phase 0 
 - **Buttons:** the main action is a black pill with white text. Secondary is a white pill with a hairline border, tonal is the place's tint, ghost is plain ink text. Pressing scales to 0.97.
 - **Shape:** cards radius 20 with a 1.5 px hairline border and no visible shadow, fields 14, tiles 16, 4-point spacing grid, 20 px screen gutter.
 - **Illustration:** there is no mascot. `Logo` is three stacked bars (an "order", the middle one fogged). `Mark` is a line icon in a circle. Icons come from `Icon`.
-- **Emoji** are for player avatars, the two powers and the finale confetti. Not for navigation, section art or buttons.
+- **Emoji** are for player avatars, each game's own symbol (`src/components/game-info.ts`), the two powers and the finale confetti. Not for navigation, section art or buttons.
 - **Backdrop:** plain paper. `Backdrop` keeps its `variant` prop for callers, but both variants draw the same page.
 - **People:** emoji on a white token with a hairline rim. The Season Pass adds a yellow ring.
 - **QR codes:** always `#111` on `#FFF` with a white quiet zone. Inverted codes fail on some phone cameras.

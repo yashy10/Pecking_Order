@@ -180,6 +180,7 @@ export function BlurGame({ groupId, gameId, multiplier, revealAt }: GameProps) {
           testID="blur-result"
           backTestID="back-to-group"
           groupId={groupId}
+          gameId={gameId}
           points={result.points}
           multiplier={multiplier}
           revealAt={revealAt}

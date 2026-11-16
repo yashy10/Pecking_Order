@@ -1,12 +1,16 @@
 import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation, type MutationCtx } from "./_generated/server";
-import { PROMPTS } from "./content/prompts";
+import { EITHER_PROMPTS, PROMPTS, VOTE_PROMPTS } from "./content/prompts";
 import { requireMember } from "./lib/auth";
 import { ANSWER_MAX_CHARS, MAX_MEMBERS } from "./lib/constants";
 import { promptFor } from "./lib/day";
+import { promptShape, questionShapeFor } from "./lib/games";
 
-// Owned by Track C. Phase 0: working version.
+// Owned by Track C. The daily question comes in three shapes, each feeding a friends game:
+//   text   → Who Said It or Match-Up (written answers)
+//   vote   → Most Likely To (everyone votes for a friend)
+//   either → Read the Room (this or that)
 
 export async function createPrompt(
   ctx: MutationCtx,
@@ -14,17 +18,35 @@ export async function createPrompt(
 ): Promise<Id<"prompts">> {
   const existing = await promptFor(ctx, args.groupId, args.week, args.day);
   if (existing) return existing._id;
+  const { kind, feeds } = questionShapeFor(args.week, args.day);
+  // Each shape moves through its own list about once every four days.
+  const n = Math.floor((args.week * 7 + args.day) / 4) + args.week;
+  const base = { groupId: args.groupId, week: args.week, day: args.day, kind, feeds };
+  if (kind === "vote") {
+    return await ctx.db.insert("prompts", { ...base, question: VOTE_PROMPTS[n % VOTE_PROMPTS.length] });
+  }
+  if (kind === "either") {
+    const pick = EITHER_PROMPTS[n % EITHER_PROMPTS.length];
+    return await ctx.db.insert("prompts", { ...base, question: pick.question, options: [...pick.options] });
+  }
   return await ctx.db.insert("prompts", {
-    groupId: args.groupId,
-    week: args.week,
-    day: args.day,
+    ...base,
     question: PROMPTS[(args.week * 7 + args.day) % PROMPTS.length],
   });
 }
 
-/** 1 to 140 characters. Editable until the day is revealed. */
+/**
+ * Answer today's question. Send the field that matches its shape: `text` (1 to 140
+ * characters), `choice` (0 or 1) or `voteFor` (another member). Editable until the reveal.
+ */
 export const answer = mutation({
-  args: { token: v.string(), promptId: v.id("prompts"), text: v.string() },
+  args: {
+    token: v.string(),
+    promptId: v.id("prompts"),
+    text: v.optional(v.string()),
+    choice: v.optional(v.number()),
+    voteFor: v.optional(v.id("members")),
+  },
   returns: v.null(),
   handler: async (ctx, args) => {
     const prompt = await ctx.db.get("prompts", args.promptId);
@@ -34,9 +56,25 @@ export const answer = mutation({
     if (!group || group.phase !== "open" || group.week !== prompt.week || group.day !== prompt.day) {
       throw new ConvexError("Today's question has closed.");
     }
-    const text = args.text.trim();
-    if (text.length < 1 || text.length > ANSWER_MAX_CHARS) {
-      throw new ConvexError(`Answers need 1 to ${ANSWER_MAX_CHARS} characters.`);
+    const { kind } = promptShape(prompt);
+    let fields: { text: string; choice?: number; voteFor?: Id<"members">; rewritten?: undefined };
+    if (kind === "vote") {
+      const pick = args.voteFor ? await ctx.db.get("members", args.voteFor) : null;
+      if (!pick || pick.groupId !== prompt.groupId) throw new ConvexError("Pick someone in the group.");
+      if (pick._id === member._id) throw new ConvexError("Vote for a friend, not yourself.");
+      fields = { text: pick.name, voteFor: pick._id };
+    } else if (kind === "either") {
+      const options = prompt.options ?? [];
+      if (args.choice === undefined || !Number.isInteger(args.choice) || !options[args.choice]) {
+        throw new ConvexError("Pick one of the two.");
+      }
+      fields = { text: options[args.choice], choice: args.choice };
+    } else {
+      const text = (args.text ?? "").trim();
+      if (text.length < 1 || text.length > ANSWER_MAX_CHARS) {
+        throw new ConvexError(`Answers need 1 to ${ANSWER_MAX_CHARS} characters.`);
+      }
+      fields = { text, rewritten: undefined };
     }
     const existing = await ctx.db
       .query("answers")
@@ -44,13 +82,13 @@ export const answer = mutation({
         q.eq("promptId", prompt._id).eq("memberId", member._id),
       )
       .unique();
-    if (existing) await ctx.db.patch("answers", existing._id, { text, rewritten: undefined });
+    if (existing) await ctx.db.patch("answers", existing._id, fields);
     else {
       await ctx.db.insert("answers", {
         promptId: prompt._id,
         groupId: prompt.groupId,
         memberId: member._id,
-        text,
+        ...fields,
       });
     }
     return null;
@@ -62,6 +100,8 @@ export const answersForPrompt = internalQuery({
   args: { promptId: v.id("prompts") },
   returns: v.array(v.object({ answerId: v.id("answers"), text: v.string() })),
   handler: async (ctx, { promptId }) => {
+    const prompt = await ctx.db.get("prompts", promptId);
+    if (!prompt || promptShape(prompt).kind !== "text") return []; // votes and picks need no rewrite
     const answers = await ctx.db
       .query("answers")
       .withIndex("by_promptId", (q) => q.eq("promptId", promptId))

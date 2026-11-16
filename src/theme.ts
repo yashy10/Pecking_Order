@@ -32,6 +32,10 @@ export const colors = {
   badSoft: "#FBE5DF",
   fog: "#E9E7EE", // hidden-information slots
   border: "#E4E0D6",
+  // Kept for the mini games: a strong grid line and two "side" colours. Decoration, never text.
+  brassDim: "#8C8778",
+  terracotta: "#FF7352",
+  emerald: "#3CCB8E",
 } as const;
 
 /**
@@ -56,10 +60,13 @@ export const glass = {
   panel: "#FFFFFF",
   panelStrong: "#FFFFFF",
   edge: colors.border,
-  brassEdge: colors.border,
+  brassEdge: colors.ink, // the "this one is active" edge
   brassFill: "none",
   brassSolid: "none",
 } as const;
+
+/** Flow's pipes: eight hues that stay distinct on a white board. Game pieces, never text. */
+export const pipeColors = ["#E5484D", "#3E8EF7", "#22A06B", "#E0A800", "#F76B15", "#12A5B8", "#C24FC2", "#3A3A44"] as const;
 
 /** 4-point spacing grid: space(4) === 16. */
 export const space = (steps: number) => steps * 4;
