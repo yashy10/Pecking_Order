@@ -82,7 +82,7 @@ export function SealedResult({ groupId, points, multiplier, revealAt, onBack, te
         <View style={styles.lockWrap} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Animated.View style={[styles.ring, ringStyle]} />
           <Animated.View style={[styles.lock, !scored && styles.lockQuiet, lockStyle]}>
-            <Icon name="lock" size={30} color={scored ? colors.primaryInk : colors.muted} strokeWidth={2.4} />
+            <Icon name="lock" size={30} color={scored ? colors.onInk : colors.muted} />
           </Animated.View>
         </View>
   
@@ -91,7 +91,7 @@ export function SealedResult({ groupId, points, multiplier, revealAt, onBack, te
             {scored ? `+${shown}` : "0"}
           </Text>
           <Txt variant="title" align="center">
-            {scored ? "points sealed!" : "points sealed"}
+            points sealed
           </Txt>
         </View>
   
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     height: LOCK,
     borderRadius: LOCK / 2,
     borderWidth: 2,
-    borderColor: colors.accent,
+    borderColor: colors.ink,
   },
   lock: {
     width: LOCK,
@@ -165,30 +165,21 @@ const styles = StyleSheet.create({
     borderRadius: LOCK / 2,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary,
-    backgroundImage: "linear-gradient(180deg, #E7C75A 0%, #C9A02E 100%)",
-    boxShadow: "0px 0px 24px rgba(243, 216, 120, 0.45), inset 0px 1px 0px rgba(255, 245, 210, 0.5)",
+    backgroundColor: colors.ink,
   },
   lockQuiet: {
-    backgroundColor: colors.raised,
-    backgroundImage: "none",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    boxShadow: "none",
+    backgroundColor: colors.surface,
   },
   score: { alignItems: "center" },
   points: {
     fontFamily: fonts.display,
     fontSize: 56,
     lineHeight: 64,
-    letterSpacing: 1,
-    color: colors.accent,
+    letterSpacing: -1,
+    color: colors.ink,
     fontVariant: ["tabular-nums"],
-    textShadowColor: "rgba(243, 216, 120, 0.35)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 18,
   },
-  pointsQuiet: { color: colors.muted, textShadowRadius: 0 },
+  pointsQuiet: { color: colors.muted },
   tease: { maxWidth: 300 },
   actions: { alignSelf: "stretch", gap: space(1), marginTop: space(1) },
 });

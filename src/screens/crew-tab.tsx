@@ -9,7 +9,7 @@ import { GroupScreen } from "@/components/group-screen";
 import { NotifyCard } from "@/components/notify-card";
 import { Avatar, Button, Card, Icon, type IconName, List, ListRow, Section, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, radius, space } from "@/theme";
+import { colors, fonts, radius, space } from "@/theme";
 import type { Today } from "@/utils/convex";
 import * as haptics from "@/utils/haptics";
 import { joinUrl } from "@/utils/links";
@@ -18,7 +18,7 @@ import { joinUrl } from "@/utils/links";
 // playing, see where the week is, and the rules in one place.
 
 export function CrewTab({ groupId }: { groupId: Id<"groups"> }) {
-  return <GroupScreen groupId={groupId}>{(today) => <Crew groupId={groupId} today={today} />}</GroupScreen>;
+  return <GroupScreen groupId={groupId} place="crew">{(today) => <Crew groupId={groupId} today={today} />}</GroupScreen>;
 }
 
 function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
@@ -123,7 +123,7 @@ function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
       <Section title="How it works">
         <List>
           {RULES.map((r) => (
-            <ListRow key={r.title} title={r.title} subtitle={r.body} leading={<RowGlyph text={r.emoji} />} />
+            <ListRow key={r.title} title={r.title} subtitle={r.body} leading={<RowGlyph icon={r.icon} />} />
           ))}
         </List>
       </Section>
@@ -152,12 +152,12 @@ function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
 }
 
 const RULES = [
-  { emoji: "🔍", title: "One game a day", body: "Blur most days: guess the photo as it sharpens. Faster is more points." },
-  { emoji: "🔒", title: "Scores are sealed", body: "Nobody sees today's points until the evening reveal." },
-  { emoji: "🃏", title: "Wildcard Wednesday", body: "Double points. A good day to catch up." },
-  { emoji: "👻", title: "Ghost and Spy", body: "Vanish from rivals' boards, or peek further up yours. Earned, never bought." },
-  { emoji: "👑", title: "Sunday finale", body: "The full pecking order, revealed from the bottom up." },
-];
+  { icon: "search", title: "One game a day", body: "Blur most days: guess the photo as it sharpens. Faster is more points." },
+  { icon: "lock", title: "Scores are sealed", body: "Nobody sees today's points until the evening reveal." },
+  { icon: "sparkle", title: "Wildcard Wednesday", body: "Double points. A good day to catch up." },
+  { icon: "key", title: "Ghost and Spy", body: "Vanish from rivals' boards, or peek further up yours. Earned, never bought." },
+  { icon: "crown", title: "Sunday finale", body: "The full board, revealed from the bottom up." },
+] as const;
 
 const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -184,7 +184,7 @@ function WeekStrip({ day, phase }: { day: number; phase: Today["group"]["phase"]
             accessible
             accessibilityLabel={`${DAY_NAMES[i]}${current ? ", today" : ""}${done ? ", done" : ""}`}
           >
-            <Txt variant="caption" color={current ? colors.primary : colors.muted}>
+            <Txt variant="caption" color={current ? colors.ink : colors.muted}>
               {d}
             </Txt>
             <View style={[styles.dayDot, done && styles.dayDone, current && styles.dayCurrent]}>
@@ -232,8 +232,8 @@ const styles = StyleSheet.create({
   },
   dayDone: { backgroundColor: colors.goodSoft },
   dayCurrent: { backgroundColor: colors.primary },
-  tick: { color: colors.good, fontSize: 14, fontWeight: "800" },
-  special: { fontWeight: "800" },
+  tick: { color: colors.good, fontSize: 14, fontFamily: fonts.heavy },
+  special: { fontFamily: fonts.heavy },
   glyph: {
     width: 40,
     height: 40,
