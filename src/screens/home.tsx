@@ -86,7 +86,7 @@ export function Home() {
   return (
     <Screen backdrop="full" place="home" scroll={false} fill>
       <View style={styles.brand}>
-        <Logo size={panel ? 36 : 52} />
+        <Logo size={panel ? 30 : 40} />
         <Text style={styles.wordmark} accessibilityRole="header">
           Pecking{"\n"}Order
         </Text>
@@ -126,6 +126,7 @@ export function Home() {
                 >
                   {groups.map((g, i) => (
                     <GameButton
+                      dense
                       key={g.groupId}
                       tone={i === 0 ? "brass" : "glass"}
                       overline={
@@ -153,6 +154,7 @@ export function Home() {
             <View style={styles.grid}>
               <View style={styles.cell}>
                 <GameButton
+                  dense
                   compact
                   tone={hasGroups ? "glass" : "brass"}
                   overline="Start one"
@@ -164,6 +166,7 @@ export function Home() {
               </View>
               <View style={styles.cell}>
                 <GameButton
+                  dense
                   compact
                   overline="Have a code?"
                   title="Join"
@@ -182,7 +185,7 @@ export function Home() {
                 onPress={() => router.push("/profile")}
                 style={({ pressed }) => [styles.me, pressed && styles.pressed]}
               >
-                <Avatar emoji={me.emoji} hasPass={me.hasPass} size={36} />
+                <Avatar emoji={me.emoji} hasPass={me.hasPass} size={28} />
                 <Txt variant="label" numberOfLines={1} style={styles.meName}>
                   {me.name}
                 </Txt>
@@ -218,6 +221,7 @@ function AdminGames() {
   return (
     <View>
       <GameButton
+        dense
         testID="admin-games"
         overline={busy ? "Opening…" : "All 11 games · play any time"}
         title="Admin Games"
@@ -327,23 +331,23 @@ function GroupMark({ name, onFill }: { name: string; onFill?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  adminGlyph: { fontSize: 26 },
-  brand: { alignItems: "flex-start", gap: space(4), paddingTop: space(4) },
+  adminGlyph: { fontSize: 20 },
+  brand: { alignItems: "flex-start", gap: space(3), paddingTop: space(2) },
   wordmark: {
     fontFamily: fonts.display,
-    fontSize: 44,
-    lineHeight: 44,
-    letterSpacing: -1.2,
+    fontSize: 34,
+    lineHeight: 36,
+    letterSpacing: -0.9,
     color: colors.ink,
   },
   lede: { maxWidth: 300 },
-  zone: { flex: 1, minHeight: 0, justifyContent: "flex-end", gap: space(4) },
+  zone: { flex: 1, minHeight: 0, justifyContent: "flex-end", gap: space(3) },
   zoneLabel: { paddingHorizontal: space(1) },
-  stack: { gap: space(2.5) },
-  groups: { flexShrink: 1, minHeight: 0, gap: space(2.5) },
+  stack: { gap: space(2) },
+  groups: { flexShrink: 1, minHeight: 0, gap: space(2) },
   list: { flexGrow: 0 },
   empty: { paddingHorizontal: space(4) },
-  grid: { flexDirection: "row", gap: space(3) },
+  grid: { flexDirection: "row", gap: space(2) },
   cell: { flex: 1 },
   codeInput: {
     fontFamily: fonts.display,
@@ -356,8 +360,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space(2),
-    minHeight: 48,
-    paddingLeft: space(1.5),
+    minHeight: 40,
+    paddingLeft: space(1),
     paddingRight: space(3),
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
@@ -368,13 +372,13 @@ const styles = StyleSheet.create({
   meName: { flexShrink: 1 },
   pressed: { opacity: 0.7 },
   mark: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.sunken,
   },
   markOnFill: { backgroundColor: colors.surface },
-  markText: { fontFamily: fonts.display, fontSize: 20, color: colors.ink },
+  markText: { fontFamily: fonts.display, fontSize: 16, color: colors.ink },
 });

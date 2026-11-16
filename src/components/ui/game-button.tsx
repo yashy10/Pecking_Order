@@ -17,6 +17,8 @@ type Props = {
   leading?: ReactNode;
   /** Hide the chevron (for compact grid buttons). */
   compact?: boolean;
+  /** Shorter, with a smaller title: for screens that list many tiles, like Home. */
+  dense?: boolean;
   selected?: boolean;
   testID?: string;
   accessibilityLabel?: string;
@@ -30,6 +32,7 @@ export function GameButton({
   tone = "glass",
   leading,
   compact,
+  dense,
   selected,
   testID,
   accessibilityLabel,
@@ -49,6 +52,7 @@ export function GameButton({
       style={({ pressed }) => [
         styles.base,
         compact && styles.compact,
+        dense && styles.dense,
         bright ? { backgroundColor: place.fill, borderColor: place.fill } : styles.plain,
         pressed && styles.pressed,
       ]}
@@ -58,12 +62,12 @@ export function GameButton({
         <Txt variant="caption" color={bright ? colors.ink : colors.muted} numberOfLines={1}>
           {overline}
         </Txt>
-        <Txt variant="heading" numberOfLines={1}>
+        <Txt variant={dense ? "label" : "heading"} numberOfLines={1}>
           {title}
         </Txt>
       </View>
       {compact ? null : (
-        <Icon name="chevron" size={18} color={bright ? colors.ink : colors.muted} />
+        <Icon name="chevron" size={dense ? 16 : 18} color={bright ? colors.ink : colors.muted} />
       )}
     </Pressable>
   );
@@ -81,6 +85,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   compact: { minHeight: 64 },
+  dense: { minHeight: 54, paddingVertical: space(2), paddingHorizontal: space(3), gap: space(2.5) },
   plain: { backgroundColor: colors.surface, borderColor: colors.border },
   pressed: { opacity: 0.85, transform: [{ scale: motion.press }] },
   text: { flex: 1, gap: 1 },
