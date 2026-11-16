@@ -147,6 +147,13 @@ function Crew({ groupId, today }: { groupId: Id<"groups">; today: Today }) {
             onPress={() => router.push("/profile")}
             testID="crew-profile"
           />
+          <ListRow
+            title="Group settings"
+            subtitle="Rename it, a new invite code, leave or delete"
+            leading={<Avatar emoji="⚙️" size={40} />}
+            onPress={() => router.push(`/g/${groupId}/settings`)}
+            testID="crew-settings"
+          />
         </List>
       ) : null}
       <NotifyCard variant="settings" />

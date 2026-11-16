@@ -47,6 +47,7 @@ import type * as matchUp from "../matchUp.js";
 import type * as mostLikely from "../mostLikely.js";
 import type * as notifications from "../notifications.js";
 import type * as powers from "../powers.js";
+import type * as profile from "../profile.js";
 import type * as prompts from "../prompts.js";
 import type * as pushSender from "../pushSender.js";
 import type * as readRoom from "../readRoom.js";
@@ -105,6 +106,7 @@ declare const fullApi: ApiFromModules<{
   mostLikely: typeof mostLikely;
   notifications: typeof notifications;
   powers: typeof powers;
+  profile: typeof profile;
   prompts: typeof prompts;
   pushSender: typeof pushSender;
   readRoom: typeof readRoom;

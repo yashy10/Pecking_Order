@@ -1,214 +1,220 @@
 import { useMutation, useQuery } from "convex/react";
-import { Redirect, router } from "expo-router";
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { api } from "@convex/_generated/api";
-import {
-  Avatar,
-  Button,
-  Field,
-  Icon,
-  Screen,
-  ScreenSkeleton,
-  Txt,
-} from "@/components/ui";
-import { EMOJIS } from "@/constants";
+import { ConfirmCard, DangerButton } from "@/components/confirm-card";
+import { ProfileForm } from "@/components/profile-form";
+import { Avatar, Button, Card, EmptyState, Icon, List, ListRow, Screen, ScreenSkeleton, Section, Txt } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
-import { colors, places, radius, space } from "@/theme";
+import { colors, fonts, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
 import * as haptics from "@/utils/haptics";
 
-// Owned by the lead. Your profile: the name and emoji your friends see in every group, and
-// the Season Pass. The whole page fits one screen and never scrolls: the emoji grid takes
-// whatever height is left and its cells shrink to fit, and Save stays pinned at the bottom.
-
-const COLUMNS = 6;
-const ROWS = Math.ceil(EMOJIS.length / COLUMNS);
+// The player's own page: name and bird, their numbers across every table, the Season Pass,
+// and signing out. Only the player's own points and streaks, never a rank (PLAN §6.1).
 
 export function Profile() {
   const token = useToken();
   const me = useQuery(api.users.me, token ? { token } : "skip");
-  const groups = useQuery(api.groups.mine, token ? { token } : "skip");
-  const save = useMutation(api.users.saveProfile);
-  const [name, setName] = useState<string | null>(null); // null until edited
-  const [emoji, setEmoji] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const overview = useQuery(api.profile.overview, token ? { token } : "skip");
+  const [editing, setEditing] = useState(false);
 
-  useEffect(() => {
-    if (!saved) return;
-    const t = setTimeout(() => setSaved(false), 2000);
-    return () => clearTimeout(t);
-  }, [saved]);
-
-  if (!token || me === undefined) {
+  if (!token || me === undefined || overview === undefined) {
     return (
-      <Screen place="home" back title="Profile">
+      <Screen back title="Profile">
         <ScreenSkeleton />
       </Screen>
     );
   }
-  if (me === null || !me.signedIn || me.needsProfile)
-    return <Redirect href="/welcome" />;
 
-  const shownName = name ?? me.name;
-  const shownEmoji = emoji ?? me.emoji;
-  const changed = shownName.trim() !== me.name || shownEmoji !== me.emoji;
-  const groupCount = groups?.length ?? 0;
-
-  async function submit() {
-    if (!token || !shownName.trim() || busy || !changed) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await save({ token, name: shownName, emoji: shownEmoji });
-      setName(null);
-      setEmoji(null);
-      setSaved(true);
-      haptics.success();
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
+  if (me === null || !me.signedIn) {
+    return (
+      <Screen back title="Profile">
+        <EmptyState emoji="🪶" title="You're signed out" body="Continue with Google to get your seat back.">
+          <Button label="Sign in" onPress={() => router.replace("/welcome")} />
+        </EmptyState>
+      </Screen>
+    );
   }
 
   return (
-    <Screen place="home" back title="Profile" scroll={false} fill>
-      <View style={styles.who}>
-        <Avatar emoji={shownEmoji} hasPass={me.hasPass} size={64} />
-        <View style={styles.grow}>
-          <Field
-            testID="name-field"
-            label="Name"
-            value={shownName}
-            onChangeText={setName}
-            placeholder="First name or nickname"
-            maxLength={20}
-            autoCapitalize="words"
-            returnKeyType="done"
-            onSubmitEditing={submit}
-          />
-        </View>
-      </View>
-
-      <View style={styles.picker}>
-        <Txt variant="label">Emoji</Txt>
-        <View style={styles.grid} accessibilityRole="radiogroup">
-          {Array.from({ length: ROWS }, (_, r) => (
-            <View key={r} style={styles.row}>
-              {EMOJIS.slice(r * COLUMNS, (r + 1) * COLUMNS).map((e) => {
-                const on = e === shownEmoji;
-                return (
-                  <Pressable
-                    key={e}
-                    accessibilityRole="radio"
-                    accessibilityLabel={e}
-                    accessibilityState={{ selected: on, checked: on }}
-                    onPress={() => {
-                      haptics.tap();
-                      setEmoji(e);
-                    }}
-                    style={({ pressed }) => [
-                      styles.cell,
-                      on && styles.cellOn,
-                      pressed && styles.cellPressed,
-                    ]}
-                  >
-                    <Text style={styles.emoji}>{e}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ))}
-        </View>
-      </View>
-
-      <Pressable
-        testID="profile-pass"
-        accessibilityRole="button"
-        accessibilityLabel={
-          me.hasPass
-            ? "Season Pass. You have it"
-            : "Season Pass. A ring on your avatar"
-        }
-        onPress={() => router.push("/pass")}
-        style={({ pressed }) => [styles.pass, pressed && styles.cellPressed]}
-      >
-        <Icon name="sparkle" size={20} />
-        <View style={styles.grow}>
-          <Txt variant="label">Season Pass</Txt>
-          <Txt variant="caption" color={colors.muted} numberOfLines={1}>
-            {me.hasPass
-              ? "Your ring is on"
-              : "A ring on your avatar. Free, cosmetic only"}
-          </Txt>
-        </View>
-        <Icon name="chevron" size={18} color={colors.muted} />
-      </Pressable>
-
-      <View style={styles.grow} />
-
-      <View style={styles.foot}>
-        {error ? (
-          <Txt variant="caption" color={colors.bad} align="center">
-            {error}
-          </Txt>
-        ) : (
-          <Txt variant="caption" color={colors.muted} align="center">
-            {groupCount === 0
-              ? "Your friends see this name and emoji."
-              : `Shown in ${groupCount === 1 ? "your group" : `all ${groupCount} of your groups`}.`}
-          </Txt>
-        )}
-        <Button
-          testID="save-profile"
-          label={saved ? "Saved" : "Save"}
-          icon={saved ? "check" : undefined}
-          onPress={submit}
-          loading={busy}
-          disabled={!changed || !shownName.trim()}
+    <Screen back title="Profile">
+      {editing ? (
+        <ProfileForm
+          title="Edit profile"
+          cta="Save"
+          initialName={me.name}
+          initialEmoji={me.emoji}
+          onSaved={() => {
+            haptics.success();
+            setEditing(false);
+          }}
+          onCancel={() => setEditing(false)}
         />
+      ) : (
+        <Card tone="soft" style={styles.hero} testID="profile-card">
+          <Avatar emoji={me.emoji} hasPass={me.hasPass} size={84} />
+          <Text style={styles.name} accessibilityRole="header" numberOfLines={1}>
+            {me.name}
+          </Text>
+          <Txt variant="caption" color={colors.muted}>
+            {me.hasPass ? "Season Pass · signed in with Google" : "Signed in with Google"}
+          </Txt>
+          <View style={styles.editRow}>
+            <Button label="Edit name and bird" icon="edit" size="sm" variant="tonal" onPress={() => setEditing(true)} testID="profile-edit" />
+          </View>
+        </Card>
+      )}
+
+      <View style={styles.stats}>
+        <Stat value={overview.groups.length} label={overview.groups.length === 1 ? "Table" : "Tables"} />
+        <Stat value={overview.bestStreak} label="Best streak" />
+        <Stat value={overview.crowns} label={overview.crowns === 1 ? "Crown" : "Crowns"} />
       </View>
+
+      <Section title="Your tables" footnote="Only your own numbers. Nobody's rank shows until Sunday.">
+        {overview.groups.length === 0 ? (
+          <Card>
+            <Txt color={colors.muted}>No tables yet. Host one from the home screen, or join with a code.</Txt>
+          </Card>
+        ) : (
+          <List testID="profile-groups">
+            {overview.groups.map((g) => (
+              <ListRow
+                key={g.groupId}
+                title={g.name}
+                subtitle={groupLine(g)}
+                leading={<GroupMark name={g.name} />}
+                onPress={() => router.push(`/g/${g.groupId}/settings`)}
+                accessibilityLabel={`${g.name}. ${groupLine(g)}. Open table settings`}
+              />
+            ))}
+          </List>
+        )}
+      </Section>
+
+      <Section title="Season Pass">
+        <List>
+          <ListRow
+            title={me.hasPass ? "You have the Season Pass" : "Season Pass"}
+            subtitle={me.hasPass ? "The brass ring is on your avatar in every group" : "A ring on your avatar. Free, cosmetic only"}
+            leading={<RowGlyph />}
+            onPress={() => router.push("/pass")}
+          />
+        </List>
+      </Section>
+
+      <Section title="Account">
+        <SignOut />
+      </Section>
     </Screen>
   );
 }
 
+type GroupStats = {
+  dayLabel: string;
+  week: number;
+  phase: "open" | "revealed" | "finale";
+  weekPoints: number;
+  streak: number;
+  ghost: number;
+  spy: number;
+  crowns: number;
+};
+
+function groupLine(g: GroupStats): string {
+  const parts = [g.phase === "finale" ? `Week ${g.week} · results are in` : `Week ${g.week} · ${g.dayLabel}`];
+  parts.push(`${g.weekPoints} pts banked`);
+  if (g.streak > 0) parts.push(`${g.streak}-day streak`);
+  const powers = [g.ghost > 0 ? `${g.ghost} Ghost` : null, g.spy > 0 ? `${g.spy} Spy` : null].filter(Boolean);
+  if (powers.length) parts.push(powers.join(", "));
+  if (g.crowns > 0) parts.push(`👑 ${g.crowns}`);
+  return parts.join(" · ");
+}
+
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <Card style={styles.stat}>
+      <Txt variant="title" tabular align="center">
+        {value}
+      </Txt>
+      <Txt variant="overline" color={colors.muted} align="center">
+        {label}
+      </Txt>
+    </Card>
+  );
+}
+
+function SignOut() {
+  const token = useToken();
+  const signOut = useMutation(api.users.signOut);
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function confirm() {
+    if (!token || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await signOut({ token });
+      router.replace("/welcome");
+    } catch (e) {
+      setError(errorMessage(e));
+      setBusy(false);
+    }
+  }
+
+  if (asking) {
+    return (
+      <ConfirmCard
+        title="Sign out of this device?"
+        body="Your name, bird, groups and points stay with your Google account. Continue with Google to come back, here or on any device."
+        confirmLabel="Sign out"
+        onConfirm={confirm}
+        onCancel={() => setAsking(false)}
+        busy={busy}
+        error={error}
+        destructive
+        testID="sign-out"
+      />
+    );
+  }
+  return <DangerButton label="Sign out" onPress={() => setAsking(true)} testID="sign-out" />;
+}
+
+function GroupMark({ name }: { name: string }) {
+  return (
+    <View style={styles.mark}>
+      <Text style={styles.markText}>{name.trim().charAt(0).toUpperCase() || "?"}</Text>
+    </View>
+  );
+}
+
+function RowGlyph() {
+  return (
+    <View style={styles.mark}>
+      <Icon name="sparkle" size={18} color={colors.accent} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  who: { flexDirection: "row", alignItems: "flex-end", gap: space(4) },
-  grow: { flex: 1 },
-  // As tall as it likes on a big phone, and it gives up height first on a small one.
-  picker: {
-    flexShrink: 1,
-    flexBasis: ROWS * 62 + 28,
-    gap: space(2),
-    minHeight: 0,
-  },
-  grid: { flex: 1, gap: space(2), minHeight: 0 },
-  row: { flex: 1, flexDirection: "row", gap: space(2), minHeight: 0 },
-  cell: {
-    flex: 1,
+  hero: { alignItems: "center", gap: space(2), paddingVertical: space(6) },
+  name: { fontFamily: fonts.display, fontSize: 28, lineHeight: 36, letterSpacing: 1.5, color: colors.ink, marginTop: space(2) },
+  editRow: { marginTop: space(2) },
+  stats: { flexDirection: "row", gap: space(2.5) },
+  stat: { flex: 1, alignItems: "center", gap: space(1), paddingVertical: space(4) },
+  mark: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.field,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radius.field,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: "rgba(212, 175, 55, 0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(212, 175, 55, 0.30)",
   },
-  cellOn: { borderColor: colors.ink, backgroundColor: places.home.soft },
-  cellPressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
-  emoji: { fontSize: 24, lineHeight: 30 },
-  pass: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space(3),
-    minHeight: 60,
-    paddingHorizontal: space(4),
-    borderRadius: radius.tile,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  foot: { gap: space(2) },
+  markText: { fontFamily: fonts.display, fontSize: 18, color: colors.accent },
 });

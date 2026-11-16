@@ -79,6 +79,29 @@ export const saveProfile = mutation({
   },
 });
 
+/**
+ * Signs this device out. The player keeps their name, bird and groups: Continue with Google
+ * on any device brings them back. A player who never linked Google can't sign out, because
+ * nothing could bring them back.
+ */
+export const signOut = mutation({
+  args: { token: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { token }) => {
+    if (token.length < TOKEN_MIN_LENGTH) return null;
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .unique();
+    if (!user) return null;
+    if (user.googleSub === undefined) {
+      throw new ConvexError("Continue with Google first, so you can sign back in.");
+    }
+    await retireToken(ctx, user);
+    return null;
+  },
+});
+
 /** Step 1: returns the Google sign-in page for this attempt. */
 export const startGoogleSignIn = mutation({
   args: { token: v.string(), verifier: v.string(), returnTo: v.string() },

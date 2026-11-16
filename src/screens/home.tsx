@@ -35,6 +35,11 @@ type Panel = "create" | "join" | null;
 // Once per launch, a returning player skips this list: straight into the group this
 // device opened last, or their only group. Coming back here later doesn't bounce them.
 
+/** Show the list on the next visit instead of jumping into a group (after leaving one). */
+export function skipLaunchJump(): void {
+  markLaunchHandled();
+}
+
 export function Home() {
   const token = useToken();
   const me = useQuery(api.users.me, token ? { token } : "skip");
