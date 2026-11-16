@@ -49,7 +49,11 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const showHeader = Boolean(title || back || right);
   const width = wide ? styles.wide : null;
-  const column = <View style={[styles.column, width, fill && styles.fill]}>{children}</View>;
+  // Without scrolling, a filled column is exactly the height that's left, so its children can
+  // share it with `flex` and the page can never run past one screen.
+  const column = (
+    <View style={[styles.column, width, fill && (scroll ? styles.fill : styles.fit)]}>{children}</View>
+  );
 
   return (
     <PlaceProvider value={place}>
@@ -119,4 +123,5 @@ const styles = StyleSheet.create({
   column: { width: "100%", maxWidth: layout.maxWidth, alignSelf: "center", gap: space(5) },
   wide: { maxWidth: 1040 },
   fill: { flexGrow: 1 },
+  fit: { flex: 1, minHeight: 0 },
 });

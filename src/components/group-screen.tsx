@@ -20,7 +20,8 @@ type Props = {
 
 export function GroupScreen({ groupId, place = "today", children }: Props) {
   const token = useToken();
-  const today = useQuery(api.today.get, token ? { token, groupId } : "skip");
+  // groupId is briefly undefined while the router leaves the group (Back from a deep link).
+  const today = useQuery(api.today.get, token && groupId ? { token, groupId } : "skip");
 
   if (today === undefined) {
     return (

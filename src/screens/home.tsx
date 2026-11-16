@@ -1,44 +1,69 @@
 import { useMutation, useQuery } from "convex/react";
 import { Redirect, router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { api } from "@convex/_generated/api";
-import { ProfileForm } from "@/components/profile-form";
-import { Avatar, Button, Card, Field, GameButton, Icon, Logo, Screen, Skeleton, Txt } from "@/components/ui";
+import {
+  Avatar,
+  Button,
+  Card,
+  Field,
+  GameButton,
+  Icon,
+  Logo,
+  Screen,
+  Skeleton,
+  Txt,
+} from "@/components/ui";
 import { ONE_LINER } from "@/constants";
 import { useToken } from "@/hooks/use-identity";
 import { colors, fonts, radius, space } from "@/theme";
 import { errorMessage } from "@/utils/errors";
-import { lastGroup } from "@/utils/last-group";
+import {
+  lastGroup,
+  launchWasHandled,
+  markLaunchHandled,
+} from "@/utils/last-group";
 
 // Owned by Track A. Home: the mark and the name at the top, and everything you can do in
 // the lower half, where a thumb reaches. One thing at a time: tapping "New group" or "Join"
 // swaps the lower half for that one step.
 // First run goes to /welcome (onboarding). After that: your groups, then start or join one.
 
-type Panel = "create" | "join" | "profile" | null;
+type Panel = "create" | "join" | null;
 
 // Once per launch, a returning player skips this list: straight into the group this
 // device opened last, or their only group. Coming back here later doesn't bounce them.
-let launchChecked = false;
 
 export function Home() {
   const token = useToken();
   const me = useQuery(api.users.me, token ? { token } : "skip");
   const groups = useQuery(api.groups.mine, token ? { token } : "skip");
   const [chosen, setPanel] = useState<Panel | undefined>(undefined);
-  const [opening, setOpening] = useState(!launchChecked);
+  const [opening, setOpening] = useState(!launchWasHandled());
 
   useEffect(() => {
-    if (launchChecked || !token || me === undefined || (me && groups === undefined)) return;
+    if (
+      launchWasHandled() ||
+      !token ||
+      me === undefined ||
+      (me && groups === undefined)
+    )
+      return;
     let cancelled = false;
     void (async () => {
-      const ready = me !== null && me.signedIn && !me.needsProfile && groups !== undefined && groups.length > 0;
+      const ready =
+        me !== null &&
+        me.signedIn &&
+        !me.needsProfile &&
+        groups !== undefined &&
+        groups.length > 0;
       const last = ready ? await lastGroup() : null;
-      if (cancelled || launchChecked) return;
-      launchChecked = true;
+      if (cancelled || launchWasHandled()) return;
+      markLaunchHandled();
       const pick = ready
-        ? (groups.find((g) => g.groupId === last) ?? (groups.length === 1 ? groups[0] : undefined))
+        ? (groups.find((g) => g.groupId === last) ??
+          (groups.length === 1 ? groups[0] : undefined))
         : undefined;
       if (pick) router.replace(`/g/${pick.groupId}`);
       else setOpening(false);
@@ -54,13 +79,13 @@ export function Home() {
   const panel = chosen ?? null;
 
   return (
-    <Screen backdrop="full" place="home" fill>
+    <Screen backdrop="full" place="home" scroll={false} fill>
       <View style={styles.brand}>
         <Logo size={panel ? 36 : 52} />
         <Text style={styles.wordmark} accessibilityRole="header">
           Pecking{"\n"}Order
         </Text>
-        {panel ? null : (
+        {panel || hasGroups ? null : (
           <Txt color={colors.muted} style={styles.lede}>
             {ONE_LINER}
           </Txt>
@@ -75,15 +100,6 @@ export function Home() {
           </View>
         ) : me === null || !me.signedIn || me.needsProfile ? (
           <Redirect href="/welcome" />
-        ) : panel === "profile" ? (
-          <ProfileForm
-            title="Edit profile"
-            cta="Save"
-            initialName={me.name}
-            initialEmoji={me.emoji}
-            onSaved={() => setPanel(null)}
-            onCancel={() => setPanel(null)}
-          />
         ) : panel === "create" ? (
           <CreateGroup onCancel={() => setPanel(null)} />
         ) : panel === "join" ? (
@@ -93,26 +109,33 @@ export function Home() {
             {groups === undefined ? (
               <Skeleton height={72} />
             ) : hasGroups ? (
-              <View style={styles.stack} testID="group-list">
+              <View style={styles.groups} testID="group-list">
                 <Txt variant="overline" style={styles.zoneLabel}>
                   Your groups
                 </Txt>
-                {groups.map((g, i) => (
-                  <GameButton
-                    key={g.groupId}
-                    tone={i === 0 ? "brass" : "glass"}
-                    overline={
-                      g.phase === "finale"
-                        ? "Results are in"
-                        : g.phase === "revealed"
-                          ? `${g.dayLabel} · scores are out`
-                          : g.dayLabel
-                    }
-                    title={g.name}
-                    leading={<GroupMark name={g.name} onFill={i === 0} />}
-                    onPress={() => router.push(`/g/${g.groupId}`)}
-                  />
-                ))}
+                {/* The one part of Home that can scroll: the page itself always fits the screen. */}
+                <ScrollView
+                  style={styles.list}
+                  contentContainerStyle={styles.stack}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {groups.map((g, i) => (
+                    <GameButton
+                      key={g.groupId}
+                      tone={i === 0 ? "brass" : "glass"}
+                      overline={
+                        g.phase === "finale"
+                          ? "Results are in"
+                          : g.phase === "revealed"
+                            ? `${g.dayLabel} · scores are out`
+                            : g.dayLabel
+                      }
+                      title={g.name}
+                      leading={<GroupMark name={g.name} onFill={i === 0} />}
+                      onPress={() => router.push(`/g/${g.groupId}`)}
+                    />
+                  ))}
+                </ScrollView>
               </View>
             ) : (
               <Txt color={colors.muted} align="center" style={styles.empty}>
@@ -147,25 +170,16 @@ export function Home() {
             <View style={styles.footer}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Playing as ${me.name}. Edit profile`}
+                accessibilityLabel={`Playing as ${me.name}. Open profile`}
                 testID="edit-profile"
-                onPress={() => setPanel("profile")}
+                onPress={() => router.push("/profile")}
                 style={({ pressed }) => [styles.me, pressed && styles.pressed]}
               >
                 <Avatar emoji={me.emoji} hasPass={me.hasPass} size={36} />
                 <Txt variant="label" numberOfLines={1} style={styles.meName}>
                   {me.name}
                 </Txt>
-                <Icon name="edit" size={16} color={colors.muted} />
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Season Pass"
-                onPress={() => router.push("/pass")}
-                style={({ pressed }) => [styles.passChip, pressed && styles.pressed]}
-              >
-                <Icon name="sparkle" size={16} color={colors.ink} />
-                <Txt variant="label">Season Pass</Txt>
+                <Icon name="chevron" size={16} color={colors.muted} />
               </Pressable>
             </View>
           </>
@@ -265,43 +279,52 @@ function JoinWithCode({ onCancel }: { onCancel: () => void }) {
 function GroupMark({ name, onFill }: { name: string; onFill?: boolean }) {
   return (
     <View style={[styles.mark, onFill && styles.markOnFill]}>
-      <Text style={styles.markText}>{name.trim().charAt(0).toUpperCase() || "?"}</Text>
+      <Text style={styles.markText}>
+        {name.trim().charAt(0).toUpperCase() || "?"}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  brand: { alignItems: "flex-start", gap: space(4), paddingTop: space(8) },
-  wordmark: { fontFamily: fonts.display, fontSize: 44, lineHeight: 44, letterSpacing: -1.2, color: colors.ink },
+  brand: { alignItems: "flex-start", gap: space(4), paddingTop: space(4) },
+  wordmark: {
+    fontFamily: fonts.display,
+    fontSize: 44,
+    lineHeight: 44,
+    letterSpacing: -1.2,
+    color: colors.ink,
+  },
   lede: { maxWidth: 300 },
-  zone: { flexGrow: 1, justifyContent: "flex-end", gap: space(4), paddingTop: space(8) },
+  zone: { flex: 1, minHeight: 0, justifyContent: "flex-end", gap: space(4) },
   zoneLabel: { paddingHorizontal: space(1) },
   stack: { gap: space(2.5) },
+  groups: { flexShrink: 1, minHeight: 0, gap: space(2.5) },
+  list: { flexGrow: 0 },
   empty: { paddingHorizontal: space(4) },
   grid: { flexDirection: "row", gap: space(3) },
   cell: { flex: 1 },
-  codeInput: { fontFamily: fonts.display, fontSize: 24, letterSpacing: 6, textAlign: "center" },
-  footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space(3) },
+  codeInput: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    letterSpacing: 6,
+    textAlign: "center",
+  },
+  footer: { flexDirection: "row", alignItems: "center" },
   me: {
     flexDirection: "row",
     alignItems: "center",
     gap: space(2),
     minHeight: 48,
+    paddingLeft: space(1.5),
     paddingRight: space(3),
-    flexShrink: 1,
-  },
-  meName: { flexShrink: 1 },
-  passChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space(1.5),
-    paddingHorizontal: space(4),
-    minHeight: 44,
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderColor: colors.border,
+    flexShrink: 1,
   },
+  meName: { flexShrink: 1 },
   pressed: { opacity: 0.7 },
   mark: {
     width: 44,

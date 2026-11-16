@@ -93,7 +93,7 @@ export function NotifyCard({ variant }: Props) {
   return (
     <Card testID={`notify-${variant}`} style={styles.card}>
       <View style={styles.head}>
-        <Txt style={styles.bell}>{state === "on" ? "🔔" : state === "blocked" ? "🔕" : "🐣"}</Txt>
+        <Txt style={styles.bell}>{state === "on" ? "🔔" : state === "blocked" ? "🔕" : "🔔"}</Txt>
         <View style={styles.grow}>
           <Txt variant="heading">{TITLE[state]}</Txt>
           <Txt variant="caption" color={colors.muted}>
@@ -102,7 +102,7 @@ export function NotifyCard({ variant }: Props) {
         </View>
       </View>
       {state === "off" ? (
-        <Button testID="notify-on" label="Turn on reminders" icon="sparkle" onPress={turnOn} loading={busy} />
+        <Button testID="notify-on" label="Turn on reminders" onPress={turnOn} loading={busy} />
       ) : null}
       {state === "on" && variant === "settings" ? (
         <View style={styles.row}>
@@ -131,7 +131,7 @@ const TITLE: Record<Exclude<PushState, "unsupported">, string> = {
 };
 
 const BODY: Record<Exclude<PushState, "unsupported">, string> = {
-  off: "A nudge at noon and 7:30 PM if you haven't played, and a buzz the second the scores drop. Never more than three a day.",
+  off: "A nudge if you haven't played, and a buzz when scores drop. Three a day at most.",
   on: "Noon and 7:30 PM if you haven't played, plus every reveal and the Sunday finale.",
   blocked: "This browser blocked notifications. Allow them for this site in your browser settings, then come back.",
   install: "Tap Share, then Add to Home Screen. Open Pecking Order from there and turn reminders on.",

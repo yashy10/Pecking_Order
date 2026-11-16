@@ -8,7 +8,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { TabButton } from "@/components/ui";
 import { useToken } from "@/hooks/use-identity";
 import { colors, layout, space } from "@/theme";
-import { rememberGroup } from "@/utils/last-group";
+import { markLaunchHandled, rememberGroup } from "@/utils/last-group";
 
 // Owned by the lead. The four tabs inside a group:
 //   Today  — what to do now: play, answer the question, the latest news
@@ -20,9 +20,13 @@ import { rememberGroup } from "@/utils/last-group";
 export function GroupTabs({ groupId }: { groupId: Id<"groups"> }) {
   const insets = useSafeAreaInsets();
   const token = useToken();
-  const today = useQuery(api.today.get, token ? { token, groupId } : "skip");
+  // groupId is briefly undefined while the router leaves the group (Back from a deep link).
+  const today = useQuery(api.today.get, token && groupId ? { token, groupId } : "skip");
   const member = Boolean(today);
   // Next launch opens straight into the group this device opened last (home.tsx).
+  useEffect(() => {
+    markLaunchHandled();
+  }, []);
   useEffect(() => {
     if (member) rememberGroup(groupId);
   }, [member, groupId]);

@@ -1,8 +1,12 @@
-import { useLocalSearchParams } from "expo-router";
+import { useGlobalSearchParams, useLocalSearchParams } from "expo-router";
 import type { Id } from "@convex/_generated/dataModel";
 import { BoardTab } from "@/screens/board-tab";
 
 export default function BoardTabRoute() {
-  const { groupId } = useLocalSearchParams<{ groupId: string }>();
+  // Reached by Back from a deep-linked tab, this screen gets no params of its own, so fall
+  // back to the ones in the URL.
+  const local = useLocalSearchParams<{ groupId: string }>();
+  const global = useGlobalSearchParams<{ groupId: string }>();
+  const groupId = local.groupId ?? global.groupId;
   return <BoardTab groupId={groupId as Id<"groups">} />;
 }
